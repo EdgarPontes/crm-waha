@@ -177,6 +177,63 @@ export class WAHAClient {
   }
 
   /**
+   * Enviar mensagem de localização
+   */
+  async sendLocationMessage(
+    sessionName: string,
+    chatId: string,
+    latitude: number,
+    longitude: number,
+    name?: string
+  ): Promise<any> {
+    try {
+      const response = await this.client.post(
+        `/sessions/${sessionName}/messages`,
+        {
+          chatId,
+          location: {
+            latitude,
+            longitude,
+            name,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`[WAHA] Erro ao enviar localização:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Iniciar/reconectar uma sessão
+   */
+  async startSession(sessionName: string): Promise<SessionInfo> {
+    try {
+      const response = await this.client.post("/sessions/start", {
+        sessionName,
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`[WAHA] Erro ao iniciar sessão ${sessionName}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obter status de todas as sessões de uma vez
+   */
+  async getSessionsStatus(): Promise<any> {
+    try {
+      const response = await this.client.get("/sessions/status");
+      return response.data;
+    } catch (error) {
+      console.error(`[WAHA] Erro ao obter status das sessões:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Obter histórico de mensagens de um chat
    */
   async getMessages(

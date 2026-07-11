@@ -37,17 +37,17 @@
 - [x] Criar endpoints para listar, criar, desconectar e deletar sessões
 - [x] Implementar envio de mensagens (texto e mídia)
 - [x] Implementar obtenção de QR code
-- [ ] Implementar webhook para receber eventos WAHA
-- [ ] Implementar reconexão automática de sessões
-- [ ] Sincronizar mensagens recebidas com banco de dados
-- [ ] Atualizar status de mensagens em tempo real
-- [ ] Criar monitoramento de status das sessões
-- [ ] Implementar envio de mensagens de texto
-- [ ] Implementar envio de imagens
-- [ ] Implementar envio de áudios
-- [ ] Implementar envio de vídeos
-- [ ] Implementar envio de documentos
-- [ ] Implementar envio de localização
+- [x] Implementar webhook para receber eventos WAHA
+- [x] Implementar reconexão automática de sessões
+- [x] Sincronizar mensagens recebidas com banco de dados
+- [x] Atualizar status de mensagens em tempo real
+- [x] Criar monitoramento de status das sessões
+- [x] Implementar envio de mensagens de texto
+- [x] Implementar envio de imagens
+- [x] Implementar envio de áudios
+- [x] Implementar envio de vídeos
+- [x] Implementar envio de documentos
+- [x] Implementar envio de localização
 - [ ] Criar testes para integração WAHA
 
 ## Fase 3: CRM Base - Contatos e Leads

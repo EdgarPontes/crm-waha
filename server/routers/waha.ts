@@ -3,7 +3,18 @@ import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getWAHAClient } from "../waha-client";
 import { getDb } from "../db";
 import { eq } from "drizzle-orm";
-import { whatsappSessions } from "../../drizzle/schema";
+import {
+  whatsappSessions,
+  contacts,
+  conversations,
+  messages,
+} from "../../drizzle/schema";
+import {
+  getOrCreateContact,
+  getOrCreateConversation,
+  createMessage,
+  updateContactLastInteraction,
+} from "../db";
 
 export const wahaRouter = router({
   // Listar todas as sessões
@@ -127,7 +138,7 @@ export const wahaRouter = router({
         text: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         const wahaClient = getWAHAClient();
         const result = await wahaClient.sendMessage(
@@ -139,8 +150,32 @@ export const wahaRouter = router({
         // Salvar mensagem no banco
         const db = await getDb();
         if (db) {
-          // Aqui você salvaria a mensagem na tabela messages
-          // await db.insert(messages).values({...})
+          // Extrair número do chatId (formato: 5511999999999@c.us)
+          const phoneNumber = input.chatId.split("@")[0];
+
+          // Obter ou criar contato
+          const contact = await getOrCreateContact(phoneNumber);
+
+          if (contact) {
+            // Obter ou criar conversa
+            const conversation = await getOrCreateConversation(contact.id);
+
+            if (conversation) {
+              // Criar mensagem
+              await createMessage(
+                conversation.id,
+                "text",
+                input.text,
+                undefined,
+                ctx.user?.id,
+                input.chatId,
+                result?.messageId || result?.id
+              );
+
+              // Atualizar última interação
+              await updateContactLastInteraction(contact.id);
+            }
+          }
         }
 
         return result;
@@ -161,7 +196,7 @@ export const wahaRouter = router({
         caption: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         const wahaClient = getWAHAClient();
         const result = await wahaClient.sendMediaMessage(
@@ -171,9 +206,101 @@ export const wahaRouter = router({
           input.mediaType,
           input.caption
         );
+
+        // Salvar mensagem no banco
+        const db = await getDb();
+        if (db) {
+          const phoneNumber = input.chatId.split("@")[0];
+          const contact = await getOrCreateContact(phoneNumber);
+
+          if (contact) {
+            const conversation = await getOrCreateConversation(contact.id);
+
+            if (conversation) {
+              const messageTypeMap: Record<string, string> = {
+                image: "image",
+                video: "video",
+                audio: "audio",
+                document: "document",
+              };
+
+              await createMessage(
+                conversation.id,
+                messageTypeMap[input.mediaType] || "document",
+                input.caption,
+                input.mediaUrl,
+                ctx.user?.id,
+                input.chatId,
+                result?.messageId || result?.id
+              );
+
+              await updateContactLastInteraction(contact.id);
+            }
+          }
+        }
+
         return result;
       } catch (error) {
         console.error("[Router] Erro ao enviar mídia:", error);
+        throw error;
+      }
+    }),
+
+  // Enviar localização
+  sendLocation: protectedProcedure
+    .input(
+      z.object({
+        sessionName: z.string(),
+        chatId: z.string(),
+        latitude: z.number(),
+        longitude: z.number(),
+        name: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const wahaClient = getWAHAClient();
+        const result = await wahaClient.sendLocationMessage(
+          input.sessionName,
+          input.chatId,
+          input.latitude,
+          input.longitude,
+          input.name
+        );
+
+        // Salvar mensagem no banco
+        const db = await getDb();
+        if (db) {
+          const phoneNumber = input.chatId.split("@")[0];
+          const contact = await getOrCreateContact(phoneNumber);
+
+          if (contact) {
+            const conversation = await getOrCreateConversation(contact.id);
+
+            if (conversation) {
+              await createMessage(
+                conversation.id,
+                "location",
+                input.name || "Localização compartilhada",
+                undefined,
+                ctx.user?.id,
+                input.chatId,
+                result?.messageId || result?.id,
+                {
+                  latitude: input.latitude,
+                  longitude: input.longitude,
+                  name: input.name,
+                }
+              );
+
+              await updateContactLastInteraction(contact.id);
+            }
+          }
+        }
+
+        return result;
+      } catch (error) {
+        console.error("[Router] Erro ao enviar localização:", error);
         throw error;
       }
     }),

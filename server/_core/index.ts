@@ -6,6 +6,8 @@ import cors from "cors";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { handleWahaWebhook } from "../waha-webhook";
+import { startSessionMonitor, registerWebhooksForAllSessions } from "../waha-monitor";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -35,6 +37,11 @@ async function startServer() {
     })
   );
 
+  app.use(express.json());
+
+  // WAHA Webhook endpoint
+  app.post("/api/waha/webhook", handleWahaWebhook);
+
   const server = createServer(app);
 
   // tRPC API - MUST be registered BEFORE other middlewares in development
@@ -63,8 +70,17 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
+  server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
+
+    // Start WAHA session monitor
+    startSessionMonitor();
+
+    // Register webhooks for all sessions after a short delay
+    setTimeout(async () => {
+      const webhookBaseUrl = process.env.WAHA_WEBHOOK_URL || `http://localhost:${port}`;
+      await registerWebhooksForAllSessions(webhookBaseUrl);
+    }, 5000);
   });
 }
 

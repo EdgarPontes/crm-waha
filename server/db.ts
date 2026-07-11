@@ -160,6 +160,40 @@ export async function listUsers() {
   return await db.select().from(users);
 }
 
+export async function updateUserRole(userId: number, role: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(users)
+    .set({ role: role as any, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function updateUserInfo(
+  userId: number,
+  data: { name?: string; email?: string }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.email !== undefined) updateData.email = data.email;
+
+  return await db
+    .update(users)
+    .set(updateData)
+    .where(eq(users.id, userId));
+}
+
+export async function deleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db.delete(users).where(eq(users.id, userId));
+}
+
 // ============================================================================
 // LOCAL AUTH OPERATIONS (Email/Password)
 // ============================================================================
@@ -595,7 +629,8 @@ export async function createMessage(
   mediaUrl?: string,
   senderId?: number,
   senderPhone?: string,
-  waMessageId?: string
+  waMessageId?: string,
+  metadata?: Record<string, unknown>
 ) {
   const db = await getDb();
   if (!db) return null;
@@ -608,6 +643,7 @@ export async function createMessage(
     senderId,
     senderPhone,
     waMessageId,
+    metadata,
     status: "sent",
   });
 
@@ -637,6 +673,105 @@ export async function listMessagesByConversation(
     .orderBy(desc(messages.createdAt))
     .limit(limit)
     .offset(offset);
+}
+
+export async function getMessageByWaMessageId(waMessageId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.waMessageId, waMessageId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateMessageStatus(
+  messageId: number,
+  status: "sent" | "delivered" | "read"
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(messages)
+    .set({ status })
+    .where(eq(messages.id, messageId));
+}
+
+export async function updateMessageStatusByWaId(
+  waMessageId: string,
+  status: "sent" | "delivered" | "read"
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(messages)
+    .set({ status })
+    .where(eq(messages.waMessageId, waMessageId));
+}
+
+export async function updateContactInfo(
+  contactId: number,
+  data: { name?: string; avatar?: string; email?: string; phone?: string }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: Record<string, unknown> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.avatar !== undefined) updateData.avatar = data.avatar;
+  if (data.email !== undefined) updateData.email = data.email;
+  if (data.phone !== undefined) updateData.phone = data.phone;
+  updateData.updatedAt = new Date();
+
+  return await db
+    .update(contacts)
+    .set(updateData)
+    .where(eq(contacts.id, contactId));
+}
+
+export async function getContactByWhatsappNumber(
+  whatsappNumber: string
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(contacts)
+    .where(eq(contacts.whatsappNumber, whatsappNumber))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateConversationUnreadCount(
+  conversationId: number,
+  unreadCount: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(conversations)
+    .set({ unreadCount, updatedAt: new Date() })
+    .where(eq(conversations.id, conversationId));
+}
+
+export async function updateConversationLastMessageAt(
+  conversationId: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(conversations)
+    .set({ lastMessageAt: new Date(), updatedAt: new Date() })
+    .where(eq(conversations.id, conversationId));
 }
 
 // ============================================================================
@@ -802,6 +937,51 @@ export async function updateWhatsAppSessionStatus(
     .where(eq(whatsappSessions.id, sessionId));
 }
 
+export async function updateWhatsAppSessionByName(
+  sessionName: string,
+  data: {
+    status?: string;
+    qrCode?: string;
+    phoneNumber?: string;
+    lastErrorMessage?: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.status !== undefined) updateData.status = data.status as any;
+  if (data.qrCode !== undefined) updateData.qrCode = data.qrCode;
+  if (data.phoneNumber !== undefined)
+    updateData.phoneNumber = data.phoneNumber;
+  if (data.lastErrorMessage !== undefined)
+    updateData.lastErrorMessage = data.lastErrorMessage;
+
+  return await db
+    .update(whatsappSessions)
+    .set(updateData)
+    .where(eq(whatsappSessions.sessionName, sessionName));
+}
+
+export async function getWhatsAppSessionsByStatus(status: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(whatsappSessions)
+    .where(eq(whatsappSessions.status, status as any));
+}
+
+export async function deleteWhatsAppSessionByName(sessionName: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .delete(whatsappSessions)
+    .where(eq(whatsappSessions.sessionName, sessionName));
+}
+
 // ============================================================================
 // TAG OPERATIONS
 // ============================================================================
@@ -830,6 +1010,57 @@ export async function listTags() {
   if (!db) return [];
 
   return await db.select().from(tags);
+}
+
+export async function getTagByName(name: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(tags)
+    .where(eq(tags.name, name))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function deleteTag(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db.delete(tags).where(eq(tags.id, id));
+}
+
+export async function updateTag(
+  id: number,
+  data: { name?: string; color?: string }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: Record<string, unknown> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.color !== undefined) updateData.color = data.color;
+
+  return await db.update(tags).set(updateData).where(eq(tags.id, id));
+}
+
+export async function removeTagFromLead(leadId: number, tagName: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const lead = await getLeadById(leadId);
+  if (!lead) return null;
+
+  const currentTags = Array.isArray(lead.tags)
+    ? lead.tags.filter((t: string) => t !== tagName)
+    : [];
+
+  return await db
+    .update(leads)
+    .set({ tags: currentTags, updatedAt: new Date() })
+    .where(eq(leads.id, leadId));
 }
 
 // ============================================================================
@@ -1091,4 +1322,297 @@ export async function deleteLead(id: number) {
   return await db.delete(leads).where(eq(leads.id, id));
 }
 
-// TODO: add more feature queries here as your schema grows.
+// ============================================================================
+// AI CONFIGURATION CRUD OPERATIONS
+// ============================================================================
+
+export async function createAIConfiguration(data: {
+  provider: string;
+  apiKey: string;
+  model: string;
+  systemPrompt?: string;
+  temperature?: string;
+  maxTokens?: number;
+  isActive?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // If isActive, deactivate all other configs
+  if (data.isActive) {
+    await db
+      .update(aiConfigurations)
+      .set({ isActive: false })
+      .where(eq(aiConfigurations.isActive, true));
+  }
+
+  await db.insert(aiConfigurations).values({
+    provider: data.provider as any,
+    apiKey: data.apiKey,
+    model: data.model,
+    systemPrompt: data.systemPrompt,
+    temperature: data.temperature ?? "0.7",
+    maxTokens: data.maxTokens ?? 2000,
+    isActive: data.isActive ?? false,
+  });
+
+  // Upsert: if provider already exists, we need to update instead
+  // For simplicity we use onConflictDoUpdate
+  const created = await db
+    .select()
+    .from(aiConfigurations)
+    .where(eq(aiConfigurations.provider, data.provider as any))
+    .limit(1);
+
+  return created.length > 0 ? created[0] : null;
+}
+
+export async function updateAIConfiguration(
+  provider: string,
+  data: {
+    apiKey?: string;
+    model?: string;
+    systemPrompt?: string;
+    temperature?: string;
+    maxTokens?: number;
+    isActive?: boolean;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // If activating, deactivate all others
+  if (data.isActive) {
+    await db
+      .update(aiConfigurations)
+      .set({ isActive: false })
+      .where(eq(aiConfigurations.isActive, true));
+  }
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.apiKey !== undefined) updateData.apiKey = data.apiKey;
+  if (data.model !== undefined) updateData.model = data.model;
+  if (data.systemPrompt !== undefined)
+    updateData.systemPrompt = data.systemPrompt;
+  if (data.temperature !== undefined) updateData.temperature = data.temperature;
+  if (data.maxTokens !== undefined) updateData.maxTokens = data.maxTokens;
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  return await db
+    .update(aiConfigurations)
+    .set(updateData)
+    .where(eq(aiConfigurations.provider, provider as any));
+}
+
+export async function listAIConfigurations() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(aiConfigurations);
+}
+
+export async function deleteAIConfiguration(provider: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .delete(aiConfigurations)
+    .where(eq(aiConfigurations.provider, provider as any));
+}
+
+// ============================================================================
+// KNOWLEDGE BASE CRUD OPERATIONS
+// ============================================================================
+
+export async function createKnowledgeBaseDocument(data: {
+  fileName: string;
+  fileType: string;
+  fileUrl: string;
+  content?: string;
+  uploadedBy?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.insert(knowledgeBaseDocuments).values({
+    fileName: data.fileName,
+    fileType: data.fileType as any,
+    fileUrl: data.fileUrl,
+    content: data.content,
+    uploadedBy: data.uploadedBy,
+  });
+
+  const created = await db
+    .select()
+    .from(knowledgeBaseDocuments)
+    .orderBy(desc(knowledgeBaseDocuments.createdAt))
+    .limit(1);
+
+  return created.length > 0 ? created[0] : null;
+}
+
+export async function listKnowledgeBaseDocuments() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(knowledgeBaseDocuments)
+    .orderBy(desc(knowledgeBaseDocuments.createdAt));
+}
+
+export async function getKnowledgeBaseDocumentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(knowledgeBaseDocuments)
+    .where(eq(knowledgeBaseDocuments.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function deleteKnowledgeBaseDocument(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .delete(knowledgeBaseDocuments)
+    .where(eq(knowledgeBaseDocuments.id, id));
+}
+
+// ============================================================================
+// AUTOMATION CRUD OPERATIONS
+// ============================================================================
+
+export async function createAutomation(data: {
+  name: string;
+  trigger: string;
+  triggerValue: string;
+  action: string;
+  actionValue?: Record<string, unknown>;
+  isActive?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.insert(automations).values({
+    name: data.name,
+    trigger: data.trigger as any,
+    triggerValue: data.triggerValue,
+    action: data.action as any,
+    actionValue: data.actionValue,
+    isActive: data.isActive ?? true,
+  });
+
+  const created = await db
+    .select()
+    .from(automations)
+    .orderBy(desc(automations.createdAt))
+    .limit(1);
+
+  return created.length > 0 ? created[0] : null;
+}
+
+export async function listAutomations() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(automations)
+    .orderBy(desc(automations.createdAt));
+}
+
+export async function getAutomationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(automations)
+    .where(eq(automations.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateAutomation(
+  id: number,
+  data: {
+    name?: string;
+    trigger?: string;
+    triggerValue?: string;
+    action?: string;
+    actionValue?: Record<string, unknown>;
+    isActive?: boolean;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.trigger !== undefined) updateData.trigger = data.trigger as any;
+  if (data.triggerValue !== undefined)
+    updateData.triggerValue = data.triggerValue;
+  if (data.action !== undefined) updateData.action = data.action as any;
+  if (data.actionValue !== undefined) updateData.actionValue = data.actionValue;
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  return await db
+    .update(automations)
+    .set(updateData)
+    .where(eq(automations.id, id));
+}
+
+export async function deleteAutomation(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db.delete(automations).where(eq(automations.id, id));
+}
+
+export async function listActiveAutomations() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select()
+    .from(automations)
+    .where(eq(automations.isActive, true));
+}
+
+// ============================================================================
+// AUDIT LOG OPERATIONS (extended)
+// ============================================================================
+
+export async function listAuditLogs(
+  limit = 100,
+  offset = 0,
+  filters?: { userId?: number; action?: string; entityType?: string }
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db.select().from(auditLogs).$dynamic();
+
+  if (filters?.userId) {
+    query = query.where(eq(auditLogs.userId, filters.userId)) as any;
+  }
+  if (filters?.action) {
+    query = query.where(eq(auditLogs.action, filters.action as any)) as any;
+  }
+  if (filters?.entityType) {
+    query = query.where(
+      eq(auditLogs.entityType, filters.entityType as any)
+    ) as any;
+  }
+
+  return await query
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limit)
+    .offset(offset);
+}
