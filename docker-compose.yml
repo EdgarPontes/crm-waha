@@ -5,20 +5,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: crm-omnichannel-waha
+    container_name: crm-waha
     ports:
       - "9000:9000"
     environment:
       # Banco de dados externo - Configure com suas credenciais
-      CUSTOM_DB_TYPE: ${DB_TYPE:-mysql}
-      CUSTOM_DB_HOST: ${DB_HOST:-localhost}
-      CUSTOM_DB_PORT: ${DB_PORT:-3306}
-      CUSTOM_DB_USER: ${DB_USER:-crm_user}
-      CUSTOM_DB_PASSWORD: ${DB_PASSWORD:-senha_segura}
-      CUSTOM_DB_NAME: ${DB_NAME:-crm_waha}
+      # CUSTOM_DB_TYPE: ${DB_TYPE:-mysql}
+      # CUSTOM_DB_HOST: ${DB_HOST:-localhost}
+      # CUSTOM_DB_PORT: ${DB_PORT:-3306}
+      # CUSTOM_DB_USER: ${DB_USER:-crm_user}
+      # CUSTOM_DB_PASSWORD: ${DB_PASSWORD:-senha_segura}
+      # CUSTOM_DB_NAME: ${DB_NAME:-crm_waha}
       
       # Alternativa: usar URL de conexão completa
-      # CUSTOM_DB_URL: ${DB_URL}
+      CUSTOM_DB_URL: ${DB_URL}
       
       # Configurações OAuth Manus
       VITE_APP_ID: ${VITE_APP_ID}
