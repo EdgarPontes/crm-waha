@@ -1,0 +1,175 @@
+import { z } from "zod";
+import { router, protectedProcedure } from "../_core/trpc";
+import {
+  listPipelines,
+  getPipeline,
+  getStagesByPipeline,
+  listLeadsByPipeline,
+  listLeadsByStage,
+  createLead,
+  updateLead,
+  deleteLead,
+  createPipeline,
+  updatePipeline,
+  deletePipeline,
+  createStage,
+  updateStage,
+  deleteStage,
+  moveLeadToStage,
+  getDefaultPipeline,
+  getOrCreateContact,
+  getContactById,
+  updateContactLastInteraction,
+} from "../db";
+
+export const crmRouter = router({
+  // Pipeline CRUD
+  listPipelines: protectedProcedure.query(async () => {
+    return listPipelines();
+  }),
+
+  getPipeline: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return getPipeline(input.id);
+    }),
+
+  createPipeline: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return createPipeline(input.name, input.description);
+    }),
+
+  updatePipeline: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return updatePipeline(input.id, input);
+    }),
+
+  deletePipeline: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      return deletePipeline(input.id);
+    }),
+
+  // Stages
+  getStagesByPipeline: protectedProcedure
+    .input(z.object({ pipelineId: z.number() }))
+    .query(async ({ input }) => {
+      return getStagesByPipeline(input.pipelineId);
+    }),
+
+  createStage: protectedProcedure
+    .input(
+      z.object({
+        pipelineId: z.number(),
+        name: z.string().min(1),
+        order: z.number().int().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return createStage(input.pipelineId, input.name, input.order);
+    }),
+
+  updateStage: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        order: z.number().int().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return updateStage(input.id, input);
+    }),
+
+  deleteStage: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      return deleteStage(input.id);
+    }),
+
+  // Leads
+  listLeadsByPipeline: protectedProcedure
+    .input(z.object({ pipelineId: z.number() }))
+    .query(async ({ input }) => {
+      return listLeadsByPipeline(input.pipelineId);
+    }),
+
+  listLeadsByStage: protectedProcedure
+    .input(z.object({ stageId: z.number() }))
+    .query(async ({ input }) => {
+      return listLeadsByStage(input.stageId);
+    }),
+
+  createLead: protectedProcedure
+    .input(
+      z.object({
+        pipelineId: z.number(),
+        stageId: z.number(),
+        name: z.string().min(1),
+        phone: z.string().optional(),
+        email: z.string().email().optional(),
+        notes: z.string().optional(),
+        metadata: z.record(z.unknown()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // First, get or create a contact with the provided info
+      const contact = await getOrCreateContact(input.phone || input.name, input.name);
+      if (!contact) {
+        throw new Error("Failed to create contact");
+      }
+
+      // Create the lead associated with the contact
+      return createLead(contact.id, input.stageId);
+    }),
+
+  updateLead: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional(),
+        notes: z.string().optional(),
+        metadata: z.record(z.unknown()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return updateLead(input.id, input);
+    }),
+
+  deleteLead: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      return deleteLead(input.id);
+    }),
+
+  moveLeadToStage: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        stageId: z.number(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return moveLeadToStage(input.leadId, input.stageId);
+    }),
+
+  // Default pipeline
+  getDefaultPipeline: protectedProcedure.query(async () => {
+    return getDefaultPipeline();
+  }),
+});

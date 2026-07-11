@@ -1,0 +1,91 @@
+
+services:
+  # Aplicação CRM Omnichannel WAHA
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm-omnichannel-waha
+    ports:
+      - "9000:9000"
+    environment:
+      # Banco de dados externo - Configure com suas credenciais
+      CUSTOM_DB_TYPE: ${DB_TYPE:-mysql}
+      CUSTOM_DB_HOST: ${DB_HOST:-localhost}
+      CUSTOM_DB_PORT: ${DB_PORT:-3306}
+      CUSTOM_DB_USER: ${DB_USER:-crm_user}
+      CUSTOM_DB_PASSWORD: ${DB_PASSWORD:-senha_segura}
+      CUSTOM_DB_NAME: ${DB_NAME:-crm_waha}
+      
+      # Alternativa: usar URL de conexão completa
+      # CUSTOM_DB_URL: ${DB_URL}
+      
+      # Configurações OAuth Manus
+      VITE_APP_ID: ${VITE_APP_ID}
+      OAUTH_SERVER_URL: ${OAUTH_SERVER_URL:-https://api.manus.im}
+      VITE_OAUTH_PORTAL_URL: ${VITE_OAUTH_PORTAL_URL:-https://app.manus.im}
+      JWT_SECRET: ${JWT_SECRET}
+      
+      # Configurações WAHA (opcional)
+      WAHA_API_URL: ${WAHA_API_URL:-http://localhost:3001}
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      
+      # Configurações de IA (opcional)
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      
+      # Configurações Manus Built-in APIs
+      BUILT_IN_FORGE_API_URL: ${BUILT_IN_FORGE_API_URL}
+      BUILT_IN_FORGE_API_KEY: ${BUILT_IN_FORGE_API_KEY}
+      VITE_FRONTEND_FORGE_API_URL: ${VITE_FRONTEND_FORGE_API_URL}
+      VITE_FRONTEND_FORGE_API_KEY: ${VITE_FRONTEND_FORGE_API_KEY}
+      
+      # Configurações do proprietário
+      OWNER_NAME: ${OWNER_NAME}
+      OWNER_OPEN_ID: ${OWNER_OPEN_ID}
+      
+      # Analytics
+      VITE_ANALYTICS_ENDPOINT: ${VITE_ANALYTICS_ENDPOINT}
+      VITE_ANALYTICS_WEBSITE_ID: ${VITE_ANALYTICS_WEBSITE_ID}
+      
+      # Título e logo da aplicação
+      VITE_APP_TITLE: ${VITE_APP_TITLE:-CRM Omnichannel WAHA}
+      VITE_APP_LOGO: ${VITE_APP_LOGO}
+      
+      # Node environment
+      NODE_ENV: production
+      PORT: "9000"
+    
+    # Verificar saúde da aplicação
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Reiniciar automaticamente se falhar
+    restart: unless-stopped
+    
+    # Limites de recursos (opcional)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    
+    # Volumes para logs
+    volumes:
+      - ./logs:/app/.manus-logs
+    
+    # Redes
+    networks:
+      - crm-network
+
+networks:
+  crm-network:
+    driver: bridge
