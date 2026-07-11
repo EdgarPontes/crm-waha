@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Streamdown } from "streamdown";
@@ -19,7 +20,7 @@ export default function Home() {
   // const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <DashboardLayout>
       <main>
         {/* Example: lucide-react for icons */}
         <Loader2 className="animate-spin" />
@@ -28,6 +29,6 @@ export default function Home() {
         <Streamdown>Any **markdown** content</Streamdown>
         <Button variant="default">Example Button</Button>
       </main>
-    </div>
+    </DashboardLayout>
   );
 }

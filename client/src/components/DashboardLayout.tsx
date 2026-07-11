@@ -20,15 +20,31 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
+  Users,
+  MessageSquare,
+  Bot,
+  BookOpen,
+  Zap,
+  Smartphone,
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { label: "Kanban", path: "/kanban", icon: Zap },
+  { label: "Conversas", path: "/conversations", icon: MessageSquare },
+  { label: "Configurações IA", path: "/ai-settings", icon: Bot },
+  { label: "Base Conhecimento", path: "/knowledge-base", icon: BookOpen },
+  { label: "Automações", path: "/automations", icon: Zap },
+  { label: "Equipe", path: "/team-management", icon: Users },
+  { label: "WhatsApp", path: "/whatsapp-sessions", icon: Smartphone },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
