@@ -1,7 +1,7 @@
 packages:
-  - '.'
+  - "."
 onlyBuiltDependencies:
-  - '@builder.io/vite-plugin-jsx-loc'
+  - "@builder.io/vite-plugin-jsx-loc"
 patchedDependencies:
   wouter@3.7.1: patches/wouter@3.7.1.patch
 overrides:

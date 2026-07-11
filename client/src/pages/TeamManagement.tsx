@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Edit2, Mail } from "lucide-react";
@@ -65,11 +77,18 @@ export default function TeamManagement() {
     }
 
     if (editingId) {
-      setMembers(members.map(m =>
-        m.id === editingId
-          ? { ...m, name: formData.name, email: formData.email, role: formData.role }
-          : m
-      ));
+      setMembers(
+        members.map(m =>
+          m.id === editingId
+            ? {
+                ...m,
+                name: formData.name,
+                email: formData.email,
+                role: formData.role,
+              }
+            : m
+        )
+      );
     } else {
       const newMember: TeamMember = {
         id: Date.now(),
@@ -126,7 +145,9 @@ export default function TeamManagement() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Equipes</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Gerenciamento de Equipes
+            </h1>
             <p className="text-muted-foreground mt-2">
               Gerencie membros da equipe, roles e permissões
             </p>
@@ -151,7 +172,9 @@ export default function TeamManagement() {
                 <Input
                   placeholder="Nome completo"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                 />
               </div>
 
@@ -161,13 +184,20 @@ export default function TeamManagement() {
                   type="email"
                   placeholder="email@example.com"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Perfil de Acesso</Label>
-                <Select value={formData.role} onValueChange={(v: "Administrador" | "Supervisor" | "Atendente") => setFormData({ ...formData, role: v })}>
+                <Select
+                  value={formData.role}
+                  onValueChange={(
+                    v: "Administrador" | "Supervisor" | "Atendente"
+                  ) => setFormData({ ...formData, role: v })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -178,9 +208,12 @@ export default function TeamManagement() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  {formData.role === "Administrador" && "Acesso total ao sistema"}
-                  {formData.role === "Supervisor" && "Gerencia atendentes e visualiza relatórios"}
-                  {formData.role === "Atendente" && "Acesso apenas a conversas atribuídas"}
+                  {formData.role === "Administrador" &&
+                    "Acesso total ao sistema"}
+                  {formData.role === "Supervisor" &&
+                    "Gerencia atendentes e visualiza relatórios"}
+                  {formData.role === "Atendente" &&
+                    "Acesso apenas a conversas atribuídas"}
                 </p>
               </div>
 
@@ -202,7 +235,9 @@ export default function TeamManagement() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold">{members.length}</p>
-                <p className="text-sm text-muted-foreground">Total de Membros</p>
+                <p className="text-sm text-muted-foreground">
+                  Total de Membros
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -217,7 +252,9 @@ export default function TeamManagement() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">{members.filter(m => m.status === "ativo").length}</p>
+                <p className="text-3xl font-bold">
+                  {members.filter(m => m.status === "ativo").length}
+                </p>
                 <p className="text-sm text-muted-foreground">Ativos Agora</p>
               </div>
             </CardContent>
@@ -228,9 +265,15 @@ export default function TeamManagement() {
         <Tabs defaultValue="todos" className="w-full">
           <TabsList>
             <TabsTrigger value="todos">Todos ({members.length})</TabsTrigger>
-            <TabsTrigger value="atendentes">Atendentes ({atendentes.length})</TabsTrigger>
-            <TabsTrigger value="supervisores">Supervisores ({supervisores.length})</TabsTrigger>
-            <TabsTrigger value="admins">Administradores ({admins.length})</TabsTrigger>
+            <TabsTrigger value="atendentes">
+              Atendentes ({atendentes.length})
+            </TabsTrigger>
+            <TabsTrigger value="supervisores">
+              Supervisores ({supervisores.length})
+            </TabsTrigger>
+            <TabsTrigger value="admins">
+              Administradores ({admins.length})
+            </TabsTrigger>
           </TabsList>
 
           {/* All Members */}
@@ -242,7 +285,7 @@ export default function TeamManagement() {
                 </CardContent>
               </Card>
             ) : (
-              members.map((member) => (
+              members.map(member => (
                 <Card key={member.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between gap-4">
@@ -263,7 +306,9 @@ export default function TeamManagement() {
                           </span>
                           <span>Conversas: {member.conversasAtribuidas}</span>
                           {member.taxaConversao && (
-                            <span>Taxa de Conversão: {member.taxaConversao}%</span>
+                            <span>
+                              Taxa de Conversão: {member.taxaConversao}%
+                            </span>
                           )}
                         </div>
                       </div>
@@ -300,18 +345,24 @@ export default function TeamManagement() {
                 </CardContent>
               </Card>
             ) : (
-              atendentes.map((member) => (
+              atendentes.map(member => (
                 <Card key={member.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold">{member.name}</h3>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {member.email}
+                        </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium">{member.conversasAtribuidas} conversas</p>
+                        <p className="text-sm font-medium">
+                          {member.conversasAtribuidas} conversas
+                        </p>
                         {member.taxaConversao && (
-                          <p className="text-sm text-muted-foreground">{member.taxaConversao}% conversão</p>
+                          <p className="text-sm text-muted-foreground">
+                            {member.taxaConversao}% conversão
+                          </p>
                         )}
                       </div>
                     </div>
@@ -330,13 +381,15 @@ export default function TeamManagement() {
                 </CardContent>
               </Card>
             ) : (
-              supervisores.map((member) => (
+              supervisores.map(member => (
                 <Card key={member.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold">{member.name}</h3>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {member.email}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -354,13 +407,15 @@ export default function TeamManagement() {
                 </CardContent>
               </Card>
             ) : (
-              admins.map((member) => (
+              admins.map(member => (
                 <Card key={member.id}>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold">{member.name}</h3>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {member.email}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -378,15 +433,22 @@ export default function TeamManagement() {
           <CardContent className="space-y-3 text-sm">
             <div>
               <p className="font-semibold text-blue-900">👑 Administrador</p>
-              <p className="text-blue-800">Acesso total ao sistema, gerenciamento de equipes e configurações</p>
+              <p className="text-blue-800">
+                Acesso total ao sistema, gerenciamento de equipes e
+                configurações
+              </p>
             </div>
             <div>
               <p className="font-semibold text-blue-900">📊 Supervisor</p>
-              <p className="text-blue-800">Gerencia atendentes, visualiza relatórios e distribui conversas</p>
+              <p className="text-blue-800">
+                Gerencia atendentes, visualiza relatórios e distribui conversas
+              </p>
             </div>
             <div>
               <p className="font-semibold text-blue-900">💬 Atendente</p>
-              <p className="text-blue-800">Acesso apenas a conversas atribuídas e base de conhecimento</p>
+              <p className="text-blue-800">
+                Acesso apenas a conversas atribuídas e base de conhecimento
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -74,7 +74,10 @@ export const conversationsRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const result = await updateConversationStatus(input.conversationId, input.status);
+      const result = await updateConversationStatus(
+        input.conversationId,
+        input.status
+      );
 
       await createAuditLog(
         ctx.user?.id,
@@ -154,7 +157,14 @@ export const conversationsRouter = router({
       .input(
         z.object({
           conversationId: z.number(),
-          type: z.enum(["text", "image", "audio", "video", "document", "location"]),
+          type: z.enum([
+            "text",
+            "image",
+            "audio",
+            "video",
+            "document",
+            "location",
+          ]),
           content: z.string().optional(),
           mediaUrl: z.string().optional(),
         })
@@ -206,13 +216,9 @@ export const conversationsRouter = router({
           input.content
         );
 
-        await createAuditLog(
-          ctx.user.id,
-          "create",
-          "note",
-          note?.id,
-          { conversationId: input.conversationId }
-        );
+        await createAuditLog(ctx.user.id, "create", "note", note?.id, {
+          conversationId: input.conversationId,
+        });
 
         return note;
       }),

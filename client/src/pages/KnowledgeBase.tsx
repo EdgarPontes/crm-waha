@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +32,7 @@ export default function KnowledgeBase() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const uploadMutation = trpc.ai.knowledgeBase.upload.useMutation({
-    onSuccess: (data) => {
+    onSuccess: data => {
       setDocuments([...documents, data as Document]);
       setSelectedFile(null);
     },
@@ -89,7 +95,9 @@ export default function KnowledgeBase() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Base de Conhecimento</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Base de Conhecimento
+          </h1>
           <p className="text-muted-foreground mt-2">
             Gerencie documentos para consulta automática pela IA
           </p>
@@ -127,7 +135,9 @@ export default function KnowledgeBase() {
                   />
                   <Button
                     variant="outline"
-                    onClick={() => document.getElementById("file-input")?.click()}
+                    onClick={() =>
+                      document.getElementById("file-input")?.click()
+                    }
                   >
                     Selecionar Arquivo
                   </Button>
@@ -155,7 +165,8 @@ export default function KnowledgeBase() {
               <CardHeader>
                 <CardTitle>Documentos Carregados</CardTitle>
                 <CardDescription>
-                  {documents.length} documento{documents.length !== 1 ? "s" : ""} na base de conhecimento
+                  {documents.length} documento
+                  {documents.length !== 1 ? "s" : ""} na base de conhecimento
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -165,7 +176,7 @@ export default function KnowledgeBase() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {documents.map((doc) => (
+                    {documents.map(doc => (
                       <div
                         key={doc.id}
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -173,10 +184,14 @@ export default function KnowledgeBase() {
                         <div className="flex items-center gap-3 flex-1">
                           <FileText className="h-5 w-5 text-muted-foreground" />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{doc.fileName}</p>
+                            <p className="font-medium truncate">
+                              {doc.fileName}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {doc.uploadedAt
-                                ? new Date(doc.uploadedAt).toLocaleDateString("pt-BR")
+                                ? new Date(doc.uploadedAt).toLocaleDateString(
+                                    "pt-BR"
+                                  )
                                 : "Data desconhecida"}
                             </p>
                           </div>
@@ -214,23 +229,17 @@ export default function KnowledgeBase() {
                   <Input
                     placeholder="Digite sua pergunta ou termo de busca..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => {
+                    onChange={e => setSearchQuery(e.target.value)}
+                    onKeyPress={e => {
                       if (e.key === "Enter") handleSearch();
                     }}
                   />
-                  <Button
-                    onClick={handleSearch}
-                    disabled={!searchQuery.trim()}
-                  >
+                  <Button onClick={handleSearch} disabled={!searchQuery.trim()}>
                     <Search className="h-4 w-4 mr-2" />
                     Buscar
                   </Button>
                   {searchResults && (
-                    <Button
-                      onClick={handleClearSearch}
-                      variant="outline"
-                    >
+                    <Button onClick={handleClearSearch} variant="outline">
                       Limpar
                     </Button>
                   )}
@@ -240,11 +249,18 @@ export default function KnowledgeBase() {
                 {searchResults && searchResults.count > 0 && (
                   <div className="space-y-3 mt-6">
                     <p className="text-sm font-medium">
-                      {searchResults.count} resultado{searchResults.count !== 1 ? "s" : ""} encontrado{searchResults.count !== 1 ? "s" : ""}
+                      {searchResults.count} resultado
+                      {searchResults.count !== 1 ? "s" : ""} encontrado
+                      {searchResults.count !== 1 ? "s" : ""}
                     </p>
                     {searchResults.results?.map((result: any, idx: number) => (
-                      <div key={idx} className="p-3 border rounded-lg bg-muted/50">
-                        <p className="text-sm text-muted-foreground">{result}</p>
+                      <div
+                        key={idx}
+                        className="p-3 border rounded-lg bg-muted/50"
+                      >
+                        <p className="text-sm text-muted-foreground">
+                          {result}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -264,7 +280,9 @@ export default function KnowledgeBase() {
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
             <p className="text-sm text-blue-900">
-              <strong>💡 Dica:</strong> A IA consultará automaticamente estes documentos ao responder mensagens de clientes. Mantenha a base de conhecimento atualizada para melhores respostas.
+              <strong>💡 Dica:</strong> A IA consultará automaticamente estes
+              documentos ao responder mensagens de clientes. Mantenha a base de
+              conhecimento atualizada para melhores respostas.
             </p>
           </CardContent>
         </Card>

@@ -5,6 +5,7 @@ Este guia explica como usar PostgreSQL como banco de dados para o CRM Omnichanne
 ## 🎯 Suporte a Bancos de Dados
 
 O projeto agora suporta:
+
 - ✅ MySQL 5.7+
 - ✅ MariaDB 10.3+
 - ✅ TiDB
@@ -244,7 +245,7 @@ CREATE INDEX idx_auditlogs_user ON auditLogs(userId);
 SELECT pg_size_pretty(pg_database_size('crm_waha'));
 
 -- Ver tamanho das tabelas
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size

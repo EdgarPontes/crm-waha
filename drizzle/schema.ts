@@ -15,18 +15,87 @@ import {
 // ============================================================================
 // ENUMS PostgreSQL
 // ============================================================================
-export const userRoleEnum = pgEnum("user_role", ["Administrador", "Supervisor", "Atendente"]);
-export const conversationStatusEnum = pgEnum("conversation_status", ["active", "waiting_human", "closed"]);
-export const conversationAiProviderEnum = pgEnum("conversation_ai_provider", ["openai", "claude", "gemini", "ollama", "openrouter", "none"]);
-export const messageTypeEnum = pgEnum("message_type", ["text", "image", "audio", "video", "document", "location"]);
-export const messageStatusEnum = pgEnum("message_status", ["sent", "delivered", "read"]);
-export const whatsappSessionStatusEnum = pgEnum("whatsapp_session_status", ["disconnected", "connecting", "connected", "error"]);
-export const aiProviderEnum = pgEnum("ai_provider", ["openai", "claude", "gemini", "ollama", "openrouter"]);
-export const knowledgeBaseFileTypeEnum = pgEnum("knowledge_base_file_type", ["pdf", "docx", "txt", "csv"]);
-export const automationTriggerEnum = pgEnum("automation_trigger", ["message_contains", "response_yes", "inactivity_hours"]);
-export const automationActionEnum = pgEnum("automation_action", ["move_stage", "send_message", "add_tag", "assign_user"]);
-export const auditActionEnum = pgEnum("audit_action", ["login", "logout", "create", "update", "delete", "move_kanban", "transfer_conversation", "send_message", "receive_message"]);
-export const auditEntityEnum = pgEnum("audit_entity", ["lead", "conversation", "message", "contact", "user", "automation", "ai_config"]);
+export const userRoleEnum = pgEnum("user_role", [
+  "Administrador",
+  "Supervisor",
+  "Atendente",
+]);
+export const conversationStatusEnum = pgEnum("conversation_status", [
+  "active",
+  "waiting_human",
+  "closed",
+]);
+export const conversationAiProviderEnum = pgEnum("conversation_ai_provider", [
+  "openai",
+  "claude",
+  "gemini",
+  "ollama",
+  "openrouter",
+  "none",
+]);
+export const messageTypeEnum = pgEnum("message_type", [
+  "text",
+  "image",
+  "audio",
+  "video",
+  "document",
+  "location",
+]);
+export const messageStatusEnum = pgEnum("message_status", [
+  "sent",
+  "delivered",
+  "read",
+]);
+export const whatsappSessionStatusEnum = pgEnum("whatsapp_session_status", [
+  "disconnected",
+  "connecting",
+  "connected",
+  "error",
+]);
+export const aiProviderEnum = pgEnum("ai_provider", [
+  "openai",
+  "claude",
+  "gemini",
+  "ollama",
+  "openrouter",
+]);
+export const knowledgeBaseFileTypeEnum = pgEnum("knowledge_base_file_type", [
+  "pdf",
+  "docx",
+  "txt",
+  "csv",
+]);
+export const automationTriggerEnum = pgEnum("automation_trigger", [
+  "message_contains",
+  "response_yes",
+  "inactivity_hours",
+]);
+export const automationActionEnum = pgEnum("automation_action", [
+  "move_stage",
+  "send_message",
+  "add_tag",
+  "assign_user",
+]);
+export const auditActionEnum = pgEnum("audit_action", [
+  "login",
+  "logout",
+  "create",
+  "update",
+  "delete",
+  "move_kanban",
+  "transfer_conversation",
+  "send_message",
+  "receive_message",
+]);
+export const auditEntityEnum = pgEnum("audit_entity", [
+  "lead",
+  "conversation",
+  "message",
+  "contact",
+  "user",
+  "automation",
+  "ai_config",
+]);
 
 // ============================================================================
 // USERS
@@ -46,7 +115,7 @@ export const users = pgTable(
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
     lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   },
-  (table) => ({
+  table => ({
     openIdIdx: uniqueIndex("openId_idx").on(table.openId),
     emailIdx: uniqueIndex("email_idx").on(table.email),
   })
@@ -62,7 +131,9 @@ export const contacts = pgTable(
   "contacts",
   {
     id: integer().generatedAlwaysAsIdentity().primaryKey(),
-    whatsappNumber: varchar("whatsappNumber", { length: 20 }).notNull().unique(),
+    whatsappNumber: varchar("whatsappNumber", { length: 20 })
+      .notNull()
+      .unique(),
     name: varchar("name", { length: 255 }),
     avatar: varchar("avatar", { length: 512 }),
     email: varchar("email", { length: 320 }),
@@ -71,9 +142,13 @@ export const contacts = pgTable(
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
     lastInteractionAt: timestamp("lastInteractionAt").defaultNow().notNull(),
   },
-  (table) => ({
-    whatsappNumberIdx: uniqueIndex("whatsappNumber_idx").on(table.whatsappNumber),
-    lastInteractionIdx: index("lastInteractionAt_idx").on(table.lastInteractionAt),
+  table => ({
+    whatsappNumberIdx: uniqueIndex("whatsappNumber_idx").on(
+      table.whatsappNumber
+    ),
+    lastInteractionIdx: index("lastInteractionAt_idx").on(
+      table.lastInteractionAt
+    ),
   })
 );
 
@@ -107,7 +182,7 @@ export const stages = pgTable(
     order: integer("order").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
-  (table) => ({
+  table => ({
     pipelineIdIdx: index("pipelineId_idx").on(table.pipelineId),
   })
 );
@@ -131,10 +206,12 @@ export const leads = pgTable(
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
     closedAt: timestamp("closedAt"),
   },
-  (table) => ({
+  table => ({
     contactIdIdx: index("contactId_idx").on(table.contactId),
     stageIdIdx: index("stageId_idx").on(table.stageId),
-    assignedToUserIdIdx: index("assignedToUserId_idx").on(table.assignedToUserId),
+    assignedToUserIdIdx: index("assignedToUserId_idx").on(
+      table.assignedToUserId
+    ),
   })
 );
 
@@ -158,7 +235,7 @@ export const conversations = pgTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
-  (table) => ({
+  table => ({
     contactIdIdx: index("contactId_idx_conversations").on(table.contactId),
     leadIdIdx: index("leadId_idx").on(table.leadId),
     statusIdx: index("status_idx").on(table.status),
@@ -187,8 +264,10 @@ export const messages = pgTable(
     status: messageStatusEnum("status").default("sent").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
-  (table) => ({
-    conversationIdIdx: index("conversationId_idx_messages").on(table.conversationId),
+  table => ({
+    conversationIdIdx: index("conversationId_idx_messages").on(
+      table.conversationId
+    ),
     createdAtIdx: index("createdAt_idx_messages").on(table.createdAt),
   })
 );
@@ -204,14 +283,16 @@ export const whatsappSessions = pgTable(
   {
     id: integer().generatedAlwaysAsIdentity().primaryKey(),
     sessionName: varchar("sessionName", { length: 255 }).notNull().unique(),
-    status: whatsappSessionStatusEnum("status").default("disconnected").notNull(),
+    status: whatsappSessionStatusEnum("status")
+      .default("disconnected")
+      .notNull(),
     qrCode: text("qrCode"),
     phoneNumber: varchar("phoneNumber", { length: 20 }),
     lastErrorMessage: text("lastErrorMessage"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
-  (table) => ({
+  table => ({
     sessionNameIdx: uniqueIndex("sessionName_idx").on(table.sessionName),
     statusIdx: index("status_idx_whatsapp").on(table.status),
   })
@@ -223,21 +304,20 @@ export type InsertWhatsAppSession = typeof whatsappSessions.$inferInsert;
 // ============================================================================
 // AI CONFIGURATIONS
 // ============================================================================
-export const aiConfigurations = pgTable(
-  "aiConfigurations",
-  {
-    id: integer().generatedAlwaysAsIdentity().primaryKey(),
-    provider: aiProviderEnum("provider").notNull().unique(),
-    apiKey: text("apiKey").notNull(),
-    model: varchar("model", { length: 255 }).notNull(),
-    systemPrompt: text("systemPrompt"),
-    temperature: numeric("temperature", { precision: 3, scale: 2 }).default("0.7"),
-    maxTokens: integer("maxTokens").default(2000),
-    isActive: boolean("isActive").default(false),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-  }
-);
+export const aiConfigurations = pgTable("aiConfigurations", {
+  id: integer().generatedAlwaysAsIdentity().primaryKey(),
+  provider: aiProviderEnum("provider").notNull().unique(),
+  apiKey: text("apiKey").notNull(),
+  model: varchar("model", { length: 255 }).notNull(),
+  systemPrompt: text("systemPrompt"),
+  temperature: numeric("temperature", { precision: 3, scale: 2 }).default(
+    "0.7"
+  ),
+  maxTokens: integer("maxTokens").default(2000),
+  isActive: boolean("isActive").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
 
 export type AIConfiguration = typeof aiConfigurations.$inferSelect;
 export type InsertAIConfiguration = typeof aiConfigurations.$inferInsert;
@@ -256,31 +336,29 @@ export const knowledgeBaseDocuments = pgTable(
     uploadedBy: integer("uploadedBy"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
-  (table) => ({
+  table => ({
     uploadedByIdx: index("uploadedBy_idx").on(table.uploadedBy),
   })
 );
 
 export type KnowledgeBaseDocument = typeof knowledgeBaseDocuments.$inferSelect;
-export type InsertKnowledgeBaseDocument = typeof knowledgeBaseDocuments.$inferInsert;
+export type InsertKnowledgeBaseDocument =
+  typeof knowledgeBaseDocuments.$inferInsert;
 
 // ============================================================================
 // AUTOMATIONS
 // ============================================================================
-export const automations = pgTable(
-  "automations",
-  {
-    id: integer().generatedAlwaysAsIdentity().primaryKey(),
-    name: varchar("name", { length: 255 }).notNull(),
-    trigger: automationTriggerEnum("trigger").notNull(),
-    triggerValue: varchar("triggerValue", { length: 255 }).notNull(),
-    action: automationActionEnum("action").notNull(),
-    actionValue: jsonb("actionValue").$type<Record<string, unknown>>(),
-    isActive: boolean("isActive").default(true),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-  }
-);
+export const automations = pgTable("automations", {
+  id: integer().generatedAlwaysAsIdentity().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  trigger: automationTriggerEnum("trigger").notNull(),
+  triggerValue: varchar("triggerValue", { length: 255 }).notNull(),
+  action: automationActionEnum("action").notNull(),
+  actionValue: jsonb("actionValue").$type<Record<string, unknown>>(),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
 
 export type Automation = typeof automations.$inferSelect;
 export type InsertAutomation = typeof automations.$inferInsert;
@@ -288,15 +366,12 @@ export type InsertAutomation = typeof automations.$inferInsert;
 // ============================================================================
 // TAGS
 // ============================================================================
-export const tags = pgTable(
-  "tags",
-  {
-    id: integer().generatedAlwaysAsIdentity().primaryKey(),
-    name: varchar("name", { length: 255 }).notNull().unique(),
-    color: varchar("color", { length: 7 }).default("#3b82f6"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  }
-);
+export const tags = pgTable("tags", {
+  id: integer().generatedAlwaysAsIdentity().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  color: varchar("color", { length: 7 }).default("#3b82f6"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
 
 export type Tag = typeof tags.$inferSelect;
 export type InsertTag = typeof tags.$inferInsert;
@@ -314,8 +389,10 @@ export const notes = pgTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
-  (table) => ({
-    conversationIdIdx: index("conversationId_idx_notes").on(table.conversationId),
+  table => ({
+    conversationIdIdx: index("conversationId_idx_notes").on(
+      table.conversationId
+    ),
     userIdIdx: index("userId_idx_notes").on(table.userId),
   })
 );
@@ -337,7 +414,7 @@ export const auditLogs = pgTable(
     changes: jsonb("changes").$type<Record<string, unknown>>(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
-  (table) => ({
+  table => ({
     userIdIdx: index("userId_idx_audit").on(table.userId),
     createdAtIdx: index("createdAt_idx_audit").on(table.createdAt),
   })

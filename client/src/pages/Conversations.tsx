@@ -48,12 +48,16 @@ interface ConversationListItem {
 
 export default function Conversations() {
   const { user } = useAuth();
-  const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    number | null
+  >(null);
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch conversations
-  const { data: conversations, isLoading } = trpc.conversations.list.useQuery<ConversationListItem[]>({
+  const { data: conversations, isLoading } = trpc.conversations.list.useQuery<
+    ConversationListItem[]
+  >({
     status: "active",
     limit: 50,
   });
@@ -84,11 +88,12 @@ export default function Conversations() {
     });
   };
 
-  const filteredConversations = conversations?.filter(
-    (conv) =>
-      conv.id.toString().includes(searchTerm) ||
-      conv.contactId.toString().includes(searchTerm)
-  ) || [];
+  const filteredConversations =
+    conversations?.filter(
+      conv =>
+        conv.id.toString().includes(searchTerm) ||
+        conv.contactId.toString().includes(searchTerm)
+    ) || [];
 
   return (
     <DashboardLayout>
@@ -103,7 +108,7 @@ export default function Conversations() {
               <Input
                 placeholder="Buscar conversas..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -121,7 +126,7 @@ export default function Conversations() {
                   Nenhuma conversa encontrada
                 </div>
               ) : (
-                filteredConversations.map((conv) => (
+                filteredConversations.map(conv => (
                   <button
                     key={conv.id}
                     onClick={() => setSelectedConversationId(conv.id)}
@@ -131,7 +136,9 @@ export default function Conversations() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">Conversa #{conv.id}</p>
+                        <p className="font-medium truncate">
+                          Conversa #{conv.id}
+                        </p>
                         <p className="text-xs text-muted-foreground truncate">
                           Contato #{conv.contactId}
                         </p>
@@ -155,7 +162,9 @@ export default function Conversations() {
             {/* Chat Header */}
             <div className="p-4 border-b flex items-center justify-between bg-muted/50">
               <div>
-                <h3 className="font-bold">Conversa #{selectedConversation?.id}</h3>
+                <h3 className="font-bold">
+                  Conversa #{selectedConversation?.id}
+                </h3>
                 <p className="text-sm text-muted-foreground">
                   Contato #{selectedConversation?.contactId}
                 </p>
@@ -177,7 +186,9 @@ export default function Conversations() {
                   <div
                     key={idx}
                     className={`flex ${
-                      msg.senderId === user?.id ? "justify-end" : "justify-start"
+                      msg.senderId === user?.id
+                        ? "justify-end"
+                        : "justify-start"
                     }`}
                   >
                     <div
@@ -206,8 +217,8 @@ export default function Conversations() {
                 <Input
                   placeholder="Digite uma mensagem..."
                   value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyPress={(e) => {
+                  onChange={e => setMessageText(e.target.value)}
+                  onKeyPress={e => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage();
@@ -216,7 +227,9 @@ export default function Conversations() {
                 />
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!messageText.trim() || sendMessageMutation.isPending}
+                  disabled={
+                    !messageText.trim() || sendMessageMutation.isPending
+                  }
                   size="icon"
                 >
                   <Send className="h-4 w-4" />
@@ -232,7 +245,9 @@ export default function Conversations() {
         ) : (
           <div className="flex-1 flex items-center justify-center border rounded-lg bg-muted/50">
             <div className="text-center space-y-4">
-              <p className="text-muted-foreground">Selecione uma conversa para começar</p>
+              <p className="text-muted-foreground">
+                Selecione uma conversa para começar
+              </p>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Conversa

@@ -18,6 +18,7 @@ nano .env
 ```
 
 Configurações essenciais:
+
 ```env
 DB_TYPE=mysql                    # mysql ou postgres
 DB_HOST=seu-db-host.com         # Host do banco de dados
@@ -70,21 +71,25 @@ DB_URL=mysql://crm_user:senha@localhost:3306/crm_waha
 ### Exemplos de Strings de Conexão
 
 **MySQL Local:**
+
 ```
 mysql://root:password@localhost:3306/crm_waha
 ```
 
 **PostgreSQL Local:**
+
 ```
 postgresql://postgres:password@localhost:5432/crm_waha
 ```
 
 **AWS RDS MySQL:**
+
 ```
 mysql://admin:senha@crm-db.xxxxx.rds.amazonaws.com:3306/crm_waha
 ```
 
 **AWS RDS PostgreSQL:**
+
 ```
 postgresql://postgres:senha@crm-db.xxxxx.rds.amazonaws.com:5432/crm_waha
 ```
@@ -123,11 +128,13 @@ docker run -d \
 ## 🔐 Segurança
 
 1. **Nunca commit .env com dados sensíveis**
+
    ```bash
    echo ".env" >> .gitignore
    ```
 
 2. **Use senhas fortes**
+
    ```bash
    openssl rand -base64 32
    ```
@@ -141,9 +148,10 @@ docker run -d \
 ### Porta 3000 já em uso
 
 Edite `docker-compose.yml`:
+
 ```yaml
 ports:
-  - "3001:3000"  # Usar porta 3001 ao invés
+  - "3001:3000" # Usar porta 3001 ao invés
 ```
 
 ### Erro de conexão com banco de dados

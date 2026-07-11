@@ -2,13 +2,28 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ArrowRight,
+} from "lucide-react";
 
 export default function Register() {
   const [, navigate] = useLocation();
@@ -27,7 +42,8 @@ export default function Register() {
       navigate("/dashboard");
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : "Erro ao criar conta";
+      const message =
+        err instanceof Error ? err.message : "Erro ao criar conta";
       setError(message);
       setIsLoading(false);
     },
@@ -75,7 +91,7 @@ export default function Register() {
                   type="text"
                   placeholder="Seu nome"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={e => setName(e.target.value)}
                   className="pl-10"
                   required
                   disabled={isLoading}
@@ -93,7 +109,7 @@ export default function Register() {
                   type="email"
                   placeholder="seu@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   className="pl-10"
                   required
                   disabled={isLoading}
@@ -111,7 +127,7 @@ export default function Register() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   className="pl-10 pr-10"
                   required
                   disabled={isLoading}
@@ -123,7 +139,11 @@ export default function Register() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -137,7 +157,7 @@ export default function Register() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                   className="pl-10"
                   required
                   disabled={isLoading}
@@ -170,7 +190,10 @@ export default function Register() {
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Já tem uma conta?{" "}
-              <Link href="/login" className="text-primary font-medium hover:underline">
+              <Link
+                href="/login"
+                className="text-primary font-medium hover:underline"
+              >
                 Fazer login
               </Link>
             </p>

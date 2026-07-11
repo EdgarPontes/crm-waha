@@ -40,7 +40,9 @@ export class WAHAClient {
     this.client = axios.create({
       baseURL: config.baseURL,
       timeout: config.timeout || 30000,
-      headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+      headers: config.apiKey
+        ? { Authorization: `Bearer ${config.apiKey}` }
+        : {},
     });
   }
 
@@ -125,12 +127,19 @@ export class WAHAClient {
   /**
    * Enviar mensagem de texto
    */
-  async sendMessage(sessionName: string, chatId: string, text: string): Promise<any> {
+  async sendMessage(
+    sessionName: string,
+    chatId: string,
+    text: string
+  ): Promise<any> {
     try {
-      const response = await this.client.post(`/sessions/${sessionName}/messages`, {
-        chatId,
-        text,
-      });
+      const response = await this.client.post(
+        `/sessions/${sessionName}/messages`,
+        {
+          chatId,
+          text,
+        }
+      );
       return response.data;
     } catch (error) {
       console.error(`[WAHA] Erro ao enviar mensagem:`, error);
@@ -149,14 +158,17 @@ export class WAHAClient {
     caption?: string
   ): Promise<any> {
     try {
-      const response = await this.client.post(`/sessions/${sessionName}/messages`, {
-        chatId,
-        media: {
-          url: mediaUrl,
-          type: mediaType,
-        },
-        caption,
-      });
+      const response = await this.client.post(
+        `/sessions/${sessionName}/messages`,
+        {
+          chatId,
+          media: {
+            url: mediaUrl,
+            type: mediaType,
+          },
+          caption,
+        }
+      );
       return response.data;
     } catch (error) {
       console.error(`[WAHA] Erro ao enviar mídia:`, error);
@@ -191,7 +203,9 @@ export class WAHAClient {
    */
   async markAsRead(sessionName: string, messageId: string): Promise<void> {
     try {
-      await this.client.post(`/sessions/${sessionName}/messages/${messageId}/read`);
+      await this.client.post(
+        `/sessions/${sessionName}/messages/${messageId}/read`
+      );
     } catch (error) {
       console.error(`[WAHA] Erro ao marcar mensagem como lida:`, error);
       throw error;

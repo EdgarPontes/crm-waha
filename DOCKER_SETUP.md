@@ -235,10 +235,10 @@ O docker-compose.yml já inclui limites:
 deploy:
   resources:
     limits:
-      cpus: '2'
+      cpus: "2"
       memory: 1G
     reservations:
-      cpus: '1'
+      cpus: "1"
       memory: 512M
 ```
 

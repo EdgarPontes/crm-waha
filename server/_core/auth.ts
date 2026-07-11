@@ -11,7 +11,9 @@ export interface JWTPayload {
   exp?: number;
 }
 
-const JWT_SECRET = new TextEncoder().encode(ENV.cookieSecret || "default-secret-change-in-production");
+const JWT_SECRET = new TextEncoder().encode(
+  ENV.sessionSecret || "default-secret-change-in-production"
+);
 const JWT_ALG = "HS256";
 const TOKEN_EXPIRY = "7d";
 const COOKIE_NAME = "auth_token";
@@ -60,7 +62,9 @@ export function clearAuthCookie(res: any) {
   });
 }
 
-export async function getUserFromToken(token: string | undefined): Promise<User | null> {
+export async function getUserFromToken(
+  token: string | undefined
+): Promise<User | null> {
   if (!token) return null;
 
   const payload = await verifyToken(token);

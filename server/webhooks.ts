@@ -52,7 +52,9 @@ webhookRouter.post("/waha", async (req: Request, res: Response) => {
   try {
     const payload: WAHAWebhookPayload = req.body;
 
-    console.log(`[Webhook] Evento recebido: ${payload.event} da sessão ${payload.session}`);
+    console.log(
+      `[Webhook] Evento recebido: ${payload.event} da sessão ${payload.session}`
+    );
 
     const db = await getDb();
     if (!db) {
@@ -88,7 +90,11 @@ webhookRouter.post("/waha", async (req: Request, res: Response) => {
 /**
  * Processar evento de mensagem
  */
-async function handleMessageEvent(db: any, sessionName: string, data: MessageEvent) {
+async function handleMessageEvent(
+  db: any,
+  sessionName: string,
+  data: MessageEvent
+) {
   try {
     // Extrair informações do evento
     const { id, chatId, from, text, type, media, timestamp, fromMe } = data;
@@ -165,7 +171,9 @@ async function handleMessageEvent(db: any, sessionName: string, data: MessageEve
         .where(eq(conversations.id, conversationId));
     }
 
-    console.log(`[Webhook] Mensagem salva: ${id} na conversa ${conversationId}`);
+    console.log(
+      `[Webhook] Mensagem salva: ${id} na conversa ${conversationId}`
+    );
   } catch (error) {
     console.error("[Webhook] Erro ao processar mensagem:", error);
   }
@@ -183,7 +191,9 @@ async function handleMessageStatusEvent(db: any, data: MessageStatusEvent) {
     // Por enquanto, apenas registramos o evento
     console.log(`[Webhook] Mensagem ${messageId} tem status ${status}`);
 
-    console.log(`[Webhook] Status da mensagem ${messageId} atualizado para ${status}`);
+    console.log(
+      `[Webhook] Status da mensagem ${messageId} atualizado para ${status}`
+    );
   } catch (error) {
     console.error("[Webhook] Erro ao atualizar status da mensagem:", error);
   }
@@ -192,11 +202,17 @@ async function handleMessageStatusEvent(db: any, data: MessageStatusEvent) {
 /**
  * Processar evento de status de sessão
  */
-async function handleSessionStatusEvent(db: any, sessionName: string, data: SessionStatusEvent) {
+async function handleSessionStatusEvent(
+  db: any,
+  sessionName: string,
+  data: SessionStatusEvent
+) {
   try {
     const { status, me } = data;
 
-    console.log(`[Webhook] Status da sessão ${sessionName} atualizado para ${status}`);
+    console.log(
+      `[Webhook] Status da sessão ${sessionName} atualizado para ${status}`
+    );
 
     // Aqui você pode atualizar a tabela whatsappSessions se necessário
     // Exemplo de como fazer (descomente quando implementar):

@@ -45,7 +45,8 @@ export default function Kanban() {
   const [leadsByStage, setLeadsByStage] = useState<Record<number, Lead[]>>({});
 
   // Fetch pipeline and stages
-  const { data: pipeline } = trpc.crm.getDefaultPipeline.useQuery<Pipeline | null>();
+  const { data: pipeline } =
+    trpc.crm.getDefaultPipeline.useQuery<Pipeline | null>();
   const { data: stagesData } = trpc.crm.getStagesByPipeline.useQuery<Stage[]>(
     { pipelineId: pipeline?.id || 0 },
     { enabled: !!pipeline?.id }
@@ -65,7 +66,10 @@ export default function Kanban() {
 
   useEffect(() => {
     if (stagesData) {
-      const stagesWithCounts = stagesData.map((s: Stage) => ({ ...s, leadCount: 0 }));
+      const stagesWithCounts = stagesData.map((s: Stage) => ({
+        ...s,
+        leadCount: 0,
+      }));
       setStages(stagesWithCounts);
       const grouped: Record<number, Lead[]> = {};
       stagesData.forEach((stage: Stage) => {
@@ -87,10 +91,12 @@ export default function Kanban() {
         }
       });
       setLeadsByStage(grouped);
-      setStages(prev => prev.map((stage: Stage) => ({
-        ...stage,
-        leadCount: grouped[stage.id]?.length || 0,
-      })));
+      setStages(prev =>
+        prev.map((stage: Stage) => ({
+          ...stage,
+          leadCount: grouped[stage.id]?.length || 0,
+        }))
+      );
     }
   }, [leadsData, stages]);
 
@@ -124,7 +130,9 @@ export default function Kanban() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Kanban de Vendas</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Kanban de Vendas
+            </h1>
             <p className="text-muted-foreground mt-2">
               Gerencie seus leads através do funil de vendas
             </p>
@@ -141,7 +149,7 @@ export default function Kanban() {
           <Input
             placeholder="Buscar leads..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="max-w-sm"
           />
         </div>
@@ -149,7 +157,7 @@ export default function Kanban() {
         {/* Kanban Board */}
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
-            {stages.map((stage) => (
+            {stages.map(stage => (
               <div
                 key={stage.id}
                 className="flex-shrink-0 w-80 bg-muted rounded-lg p-4"
@@ -165,22 +173,26 @@ export default function Kanban() {
                 {/* Drop Zone */}
                 <div
                   onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, stage.id)}
+                  onDrop={e => handleDrop(e, stage.id)}
                   className="space-y-3 min-h-96 bg-background rounded-md p-3 border-2 border-dashed border-muted-foreground/20 hover:border-muted-foreground/40 transition-colors"
                 >
-                  {leadsByStage[stage.id]?.map((lead) => (
+                  {leadsByStage[stage.id]?.map(lead => (
                     <Card
                       key={lead.id}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, lead)}
+                      onDragStart={e => handleDragStart(e, lead)}
                       className="cursor-move hover:shadow-md transition-shadow"
                     >
                       <CardContent className="p-3">
                         <div className="space-y-2">
                           <p className="font-medium text-sm">Lead #{lead.id}</p>
                           <div className="flex flex-wrap gap-1">
-                            {lead.tags?.map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
+                            {lead.tags?.map(tag => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className="text-xs"
+                              >
                                 {tag}
                               </Badge>
                             ))}

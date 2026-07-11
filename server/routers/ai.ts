@@ -39,13 +39,9 @@ export const aiRouter = router({
       .mutation(async ({ input, ctx }) => {
         // This would update the AI configuration in the database
         // Placeholder implementation
-        await createAuditLog(
-          ctx.user?.id,
-          "update",
-          "ai_config",
-          undefined,
-          { provider: input.provider }
-        );
+        await createAuditLog(ctx.user?.id, "update", "ai_config", undefined, {
+          provider: input.provider,
+        });
 
         return {
           provider: input.provider,

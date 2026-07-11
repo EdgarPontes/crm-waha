@@ -5,6 +5,7 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 ## 🎯 Funcionalidades Principais
 
 ### 1. Integração com WAHA via API REST e Webhooks
+
 - ✅ Gerenciamento de múltiplas sessões WhatsApp
 - ✅ Exibição de QR Code para conexão das sessões
 - ✅ Reconexão automática em caso de queda
@@ -12,17 +13,20 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 - ✅ Envio e recebimento de mensagens em todos os formatos (texto, imagens, áudios, vídeos, documentos, localização)
 
 ### 2. CRM de Leads
+
 - ✅ Cadastro automático ao receber nova mensagem
 - ✅ Criação de Lead, Contato e Conversa
 - ✅ Atualização de última interação para números já cadastrados
 
 ### 3. Kanban de Vendas
+
 - ✅ Colunas padrão: Novo Lead, Primeiro Contato, Qualificação, Proposta, Negociação, Fechamento, Ganho, Perdido
 - ✅ Drag-and-drop entre colunas
 - ✅ Atualização em tempo real
 - ✅ Filtros, etiquetas, responsáveis e datas de vencimento
 
 ### 4. Tela de Conversação estilo WhatsApp Web
+
 - ✅ Painel esquerdo com lista de conversas
 - ✅ Nome, foto, última mensagem, horário, contador de não lidas
 - ✅ Status IA/Humano
@@ -30,10 +34,12 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 - ✅ Suporte a mídias, emojis e atualização em tempo real via WebSocket
 
 ### 5. IA Conversacional Configurável
+
 - ✅ Suporte aos provedores: OpenAI, Ollama, OpenRouter, Claude, Gemini
 - ✅ Fluxo completo: receber mensagem → recuperar histórico → buscar contexto → gerar resposta → enviar via WAHA
 
 ### 6. Atendimento Humano
+
 - ✅ Suporte a múltiplos atendentes
 - ✅ Filas de atendimento
 - ✅ Distribuição automática e manual de conversas
@@ -41,6 +47,7 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 - ✅ Notas internas por conversa
 
 ### 7. Dashboard com Indicadores
+
 - ✅ Leads criados, conversas abertas e encerradas
 - ✅ Taxa de conversão
 - ✅ Tempo médio de resposta e de atendimento
@@ -48,21 +55,25 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 - ✅ Vendas por período
 
 ### 8. Sistema de Automações (SE/ENTÃO)
+
 - ✅ Mover lead no Kanban com base em palavras-chave
 - ✅ Enviar follow-up automático após inatividade
 - ✅ Sistema de tags manual e automático
 
 ### 9. Base de Conhecimento RAG
+
 - ✅ Upload de arquivos PDF, DOCX, TXT e CSV
 - ✅ Consulta pela IA antes de gerar cada resposta
 
 ### 10. Sistema de Permissões
+
 - ✅ Perfis de acesso: Administrador, Supervisor, Atendente
 - ✅ Auditoria de ações dos usuários
 
 ## 🏗️ Arquitetura Técnica
 
 ### Stack Tecnológico
+
 - **Frontend**: React 19 + Tailwind CSS 4 + TypeScript
 - **Backend**: Express 4 + tRPC 11 + Node.js
 - **Database**: MySQL/TiDB via Drizzle ORM
@@ -73,6 +84,7 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 ### Estrutura de Banco de Dados
 
 #### Tabelas Principais
+
 1. **users** - Usuários do sistema com roles
 2. **contacts** - Contatos do WhatsApp
 3. **leads** - Leads gerados
@@ -89,6 +101,7 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 14. **auditLogs** - Logs de auditoria
 
 ### Routers tRPC Implementados
+
 1. **crm** - Gerenciamento de contatos e leads
 2. **conversations** - Gerenciamento de conversas e mensagens
 3. **whatsapp** - Gerenciamento de sessões WhatsApp
@@ -97,6 +110,7 @@ Uma plataforma completa de atendimento e vendas via WhatsApp, integrando automa�
 6. **waha** - Integração com API WAHA
 
 ### Páginas Frontend
+
 1. **Dashboard** - Visão geral com métricas
 2. **Kanban** - Gerenciamento de vendas
 3. **Conversas** - Chat estilo WhatsApp Web
@@ -157,6 +171,7 @@ GEMINI_API_KEY=sua-chave-gemini
 ## 📊 Fluxo de Funcionamento
 
 ### Recebimento de Mensagem
+
 1. Cliente envia mensagem via WhatsApp
 2. WAHA recebe e envia webhook para `/api/webhooks/waha`
 3. Sistema cria/atualiza Contato
@@ -166,6 +181,7 @@ GEMINI_API_KEY=sua-chave-gemini
 7. Resposta é enviada via WAHA
 
 ### Atendimento Manual
+
 1. Atendente visualiza conversa na lista
 2. Clica para abrir chat
 3. Digita resposta
@@ -174,6 +190,7 @@ GEMINI_API_KEY=sua-chave-gemini
 6. Status é atualizado em tempo real
 
 ### Gerenciamento de Leads
+
 1. Lead é criado automaticamente ao primeiro contato
 2. Atendente move lead no Kanban
 3. Automações podem mover automaticamente baseado em palavras-chave
@@ -182,18 +199,21 @@ GEMINI_API_KEY=sua-chave-gemini
 ## 🔐 Sistema de Permissões
 
 ### Administrador
+
 - Acesso total ao sistema
 - Gerenciar usuários e roles
 - Configurar IA e integrações
 - Visualizar auditoria
 
 ### Supervisor
+
 - Gerenciar atendentes
 - Visualizar relatórios
 - Distribuir conversas
 - Criar automações
 
 ### Atendente
+
 - Visualizar conversas atribuídas
 - Enviar mensagens
 - Consultar base de conhecimento
@@ -208,6 +228,7 @@ pnpm test
 ```
 
 Testes incluem:
+
 - Autenticação e logout
 - Operações CRUD de contatos e leads
 - Envio de mensagens
@@ -222,16 +243,19 @@ Testes incluem:
 ## 🐛 Troubleshooting
 
 ### Erro: "Data truncated for column 'role'"
+
 - Verifique se as migrações foram aplicadas corretamente
 - Limpe os cookies e faça login novamente
 - Verifique o schema em `drizzle/schema.ts`
 
 ### Erro: "WAHA API não respondeu"
+
 - Certifique-se de que WAHA está rodando
 - Verifique a URL em `WAHA_API_URL`
 - Verifique a conectividade de rede
 
 ### Mensagens não aparecem
+
 - Verifique se o webhook está registrado
 - Verifique os logs em `.manus-logs/devserver.log`
 - Certifique-se de que a sessão está conectada
@@ -250,6 +274,7 @@ Testes incluem:
 ## 📞 Suporte
 
 Para dúvidas ou problemas:
+
 1. Consulte a documentação em `WAHA_SETUP.md`
 2. Verifique os logs em `.manus-logs/`
 3. Abra uma issue no repositório

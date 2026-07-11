@@ -1,7 +1,10 @@
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { drizzle as drizzleMysql } from "drizzle-orm/mysql2";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
-import { buildCustomDatabaseUrl, getDatabaseType } from "./_core/database-config";
+import {
+  buildCustomDatabaseUrl,
+  getDatabaseType,
+} from "./_core/database-config";
 import {
   InsertUser,
   users,
@@ -34,7 +37,7 @@ export async function getDb() {
     if (dbUrl) {
       try {
         const dbType = getDatabaseType();
-        
+
         if (dbType === "postgres") {
           // Para PostgreSQL, usamos postgres-js
           _db = drizzlePostgres(dbUrl);
@@ -98,9 +101,6 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = "Administrador";
-      updateSet.role = "Administrador";
     }
 
     if (!values.lastSignedIn) {
@@ -311,7 +311,10 @@ export async function setUserEmailVerified(userId: number) {
 // CONTACT OPERATIONS
 // ============================================================================
 
-export async function getOrCreateContact(whatsappNumber: string, name?: string) {
+export async function getOrCreateContact(
+  whatsappNumber: string,
+  name?: string
+) {
   const db = await getDb();
   if (!db) return null;
 
@@ -813,7 +816,11 @@ export async function createTag(name: string, color = "#3b82f6") {
   });
 
   // Fetch and return the created tag
-  const created = await db.select().from(tags).where(eq(tags.name, name)).limit(1);
+  const created = await db
+    .select()
+    .from(tags)
+    .where(eq(tags.name, name))
+    .limit(1);
 
   return created.length > 0 ? created[0] : null;
 }
@@ -933,7 +940,11 @@ export async function getPipeline(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(pipelines).where(eq(pipelines.id, id)).limit(1);
+  const result = await db
+    .select()
+    .from(pipelines)
+    .where(eq(pipelines.id, id))
+    .limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
@@ -957,7 +968,10 @@ export async function createPipeline(name: string, description?: string) {
   return created.length > 0 ? created[0] : null;
 }
 
-export async function updatePipeline(id: number, data: { name?: string; description?: string }) {
+export async function updatePipeline(
+  id: number,
+  data: { name?: string; description?: string }
+) {
   const db = await getDb();
   if (!db) return null;
 
@@ -981,7 +995,11 @@ export async function deletePipeline(id: number) {
 // STAGE CRUD OPERATIONS
 // ============================================================================
 
-export async function createStage(pipelineId: number, name: string, order?: number) {
+export async function createStage(
+  pipelineId: number,
+  name: string,
+  order?: number
+) {
   const db = await getDb();
   if (!db) return null;
 
@@ -1005,7 +1023,10 @@ export async function createStage(pipelineId: number, name: string, order?: numb
   return created.length > 0 ? created[0] : null;
 }
 
-export async function updateStage(id: number, data: { name?: string; order?: number }) {
+export async function updateStage(
+  id: number,
+  data: { name?: string; order?: number }
+) {
   const db = await getDb();
   if (!db) return null;
 
@@ -1036,19 +1057,19 @@ export async function listLeadsByPipeline(pipelineId: number) {
 
   if (stageIds.length === 0) return [];
 
-  return await db
-    .select()
-    .from(leads)
-    .orderBy(asc(leads.createdAt));
+  return await db.select().from(leads).orderBy(asc(leads.createdAt));
 }
 
-export async function updateLead(id: number, data: {
-  name?: string;
-  phone?: string;
-  email?: string;
-  notes?: string;
-  metadata?: Record<string, unknown>;
-}) {
+export async function updateLead(
+  id: number,
+  data: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    notes?: string;
+    metadata?: Record<string, unknown>;
+  }
+) {
   const db = await getDb();
   if (!db) return null;
 

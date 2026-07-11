@@ -4,7 +4,9 @@ import { getUserById } from "../db";
 import { ENV } from "./env";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(ENV.cookieSecret || "default-secret-change-in-production");
+const JWT_SECRET = new TextEncoder().encode(
+  ENV.sessionSecret || "default-secret-change-in-production"
+);
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -12,7 +14,9 @@ export type TrpcContext = {
   user: User | null;
 };
 
-async function verifyAuthToken(token: string | undefined): Promise<{ id: number; email: string; role: string } | null> {
+async function verifyAuthToken(
+  token: string | undefined
+): Promise<{ id: number; email: string; role: string } | null> {
   if (!token) return null;
 
   try {

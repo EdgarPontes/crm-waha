@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +28,8 @@ type AIProvider = "openai" | "claude" | "gemini" | "ollama" | "openrouter";
 
 export default function AISettings() {
   const { user } = useAuth();
-  const [selectedProvider, setSelectedProvider] = useState<AIProvider>("openai");
+  const [selectedProvider, setSelectedProvider] =
+    useState<AIProvider>("openai");
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
@@ -53,7 +66,11 @@ export default function AISettings() {
     claude: ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
     gemini: ["gemini-pro", "gemini-pro-vision"],
     ollama: ["llama2", "mistral", "neural-chat"],
-    openrouter: ["openai/gpt-4", "anthropic/claude-3-opus", "meta-llama/llama-2"],
+    openrouter: [
+      "openai/gpt-4",
+      "anthropic/claude-3-opus",
+      "meta-llama/llama-2",
+    ],
   };
 
   return (
@@ -61,7 +78,9 @@ export default function AISettings() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Configurações de IA</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Configurações de IA
+          </h1>
           <p className="text-muted-foreground mt-2">
             Configure o provedor de IA para respostas automáticas
           </p>
@@ -76,7 +95,8 @@ export default function AISettings() {
                 <div>
                   <p className="font-medium text-green-900">IA Ativa</p>
                   <p className="text-sm text-green-700">
-                    Provedor: {activeConfig.provider} | Modelo: {activeConfig.model}
+                    Provedor: {activeConfig.provider} | Modelo:{" "}
+                    {activeConfig.model}
                   </p>
                 </div>
               </div>
@@ -104,16 +124,23 @@ export default function AISettings() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Provedor de IA</Label>
-                  <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as AIProvider)}>
+                  <Select
+                    value={selectedProvider}
+                    onValueChange={v => setSelectedProvider(v as AIProvider)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="openai">OpenAI (GPT-4, GPT-3.5)</SelectItem>
+                      <SelectItem value="openai">
+                        OpenAI (GPT-4, GPT-3.5)
+                      </SelectItem>
                       <SelectItem value="claude">Anthropic Claude</SelectItem>
                       <SelectItem value="gemini">Google Gemini</SelectItem>
                       <SelectItem value="ollama">Ollama (Local)</SelectItem>
-                      <SelectItem value="openrouter">OpenRouter (Multi-modelo)</SelectItem>
+                      <SelectItem value="openrouter">
+                        OpenRouter (Multi-modelo)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -124,7 +151,7 @@ export default function AISettings() {
                     type="password"
                     placeholder="Cole sua chave de API aqui"
                     value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
+                    onChange={e => setApiKey(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
                     Sua chave será armazenada com segurança
@@ -138,7 +165,7 @@ export default function AISettings() {
                       <SelectValue placeholder="Selecione um modelo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {providerModels[selectedProvider]?.map((m) => (
+                      {providerModels[selectedProvider]?.map(m => (
                         <SelectItem key={m} value={m}>
                           {m}
                         </SelectItem>
@@ -150,7 +177,9 @@ export default function AISettings() {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleTestConnection}
-                    disabled={!apiKey || !model || testConnectionMutation.isPending}
+                    disabled={
+                      !apiKey || !model || testConnectionMutation.isPending
+                    }
                     variant="outline"
                   >
                     {testConnectionMutation.isPending && (
@@ -183,7 +212,7 @@ export default function AISettings() {
                   <Textarea
                     placeholder="Você é um atendente de vendas profissional..."
                     value={systemPrompt}
-                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    onChange={e => setSystemPrompt(e.target.value)}
                     rows={6}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -212,7 +241,7 @@ export default function AISettings() {
                     max="2"
                     step="0.1"
                     value={temperature}
-                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                    onChange={e => setTemperature(parseFloat(e.target.value))}
                     className="w-full"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -227,7 +256,7 @@ export default function AISettings() {
                     min="100"
                     max="4000"
                     value={maxTokens}
-                    onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                    onChange={e => setMaxTokens(parseInt(e.target.value))}
                   />
                   <p className="text-xs text-muted-foreground">
                     Comprimento máximo da resposta
@@ -239,7 +268,7 @@ export default function AISettings() {
                     type="checkbox"
                     id="isActive"
                     checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
+                    onChange={e => setIsActive(e.target.checked)}
                   />
                   <Label htmlFor="isActive" className="cursor-pointer">
                     Ativar IA como padrão

@@ -33,21 +33,25 @@ DATABASE_URL=mysql://usuario:senha@host:porta/banco_de_dados
 ## 📝 Formatos de String de Conexão
 
 ### MySQL Local
+
 ```
 mysql://root:password@localhost:3306/crm_waha
 ```
 
 ### MySQL Remoto
+
 ```
 mysql://usuario:senha@db.example.com:3306/crm_waha
 ```
 
 ### TiDB Cloud
+
 ```
 mysql://usuario:senha@tidb-host.tidbcloud.com:4000/crm_waha
 ```
 
 ### MariaDB
+
 ```
 mysql://usuario:senha@localhost:3306/crm_waha
 ```
@@ -72,6 +76,7 @@ FLUSH PRIVILEGES;
 ### 2. Configurar Variável de Ambiente
 
 Via Management UI:
+
 - Settings → Secrets
 - Adicione `DATABASE_URL` com sua string de conexão
 
@@ -132,20 +137,24 @@ auditLogs                - Logs de auditoria
 ## 🐛 Troubleshooting
 
 ### Erro: "Connection refused"
+
 - Verifique se o servidor MySQL está rodando
 - Verifique o host e porta na string de conexão
 - Verifique se o firewall permite conexões
 
 ### Erro: "Access denied for user"
+
 - Verifique o usuário e senha
 - Verifique as permissões do usuário
 - Certifique-se de que o usuário pode acessar do host especificado
 
 ### Erro: "Unknown database"
+
 - Verifique se o banco de dados foi criado
 - Verifique o nome do banco de dados na string de conexão
 
 ### Erro: "Data truncated for column"
+
 - Isso geralmente significa que as migrações não foram aplicadas
 - Vá para Management UI → Database e aplique as migrações
 
@@ -163,7 +172,7 @@ Para monitorar o banco de dados:
 
 ```sql
 -- Ver tamanho do banco de dados
-SELECT 
+SELECT
   table_schema,
   ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb
 FROM information_schema.tables

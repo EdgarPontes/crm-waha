@@ -25,13 +25,9 @@ export const whatsappRouter = router({
       .mutation(async ({ input, ctx }) => {
         const session = await createWhatsAppSession(input.sessionName);
 
-        await createAuditLog(
-          ctx.user?.id,
-          "create",
-          "session",
-          session?.id,
-          { sessionName: input.sessionName }
-        );
+        await createAuditLog(ctx.user?.id, "create", "session", session?.id, {
+          sessionName: input.sessionName,
+        });
 
         return session;
       }),

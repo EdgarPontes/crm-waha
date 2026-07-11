@@ -34,14 +34,14 @@ Este guia explica como configurar o CRM Omnichannel WAHA para usar seu próprio 
 
 Se preferir configurar cada componente separadamente:
 
-| Variável | Descrição | Exemplo |
-|----------|-----------|---------|
-| `CUSTOM_DB_TYPE` | Tipo de banco de dados | `mysql` ou `postgres` |
-| `CUSTOM_DB_HOST` | Host do banco de dados | `localhost` ou `db.example.com` |
-| `CUSTOM_DB_PORT` | Porta do banco de dados | `3306` (MySQL) ou `5432` (PostgreSQL) |
-| `CUSTOM_DB_USER` | Usuário do banco de dados | `crm_user` |
-| `CUSTOM_DB_PASSWORD` | Senha do banco de dados | `sua_senha_segura` |
-| `CUSTOM_DB_NAME` | Nome do banco de dados | `crm_waha` |
+| Variável             | Descrição                 | Exemplo                               |
+| -------------------- | ------------------------- | ------------------------------------- |
+| `CUSTOM_DB_TYPE`     | Tipo de banco de dados    | `mysql` ou `postgres`                 |
+| `CUSTOM_DB_HOST`     | Host do banco de dados    | `localhost` ou `db.example.com`       |
+| `CUSTOM_DB_PORT`     | Porta do banco de dados   | `3306` (MySQL) ou `5432` (PostgreSQL) |
+| `CUSTOM_DB_USER`     | Usuário do banco de dados | `crm_user`                            |
+| `CUSTOM_DB_PASSWORD` | Senha do banco de dados   | `sua_senha_segura`                    |
+| `CUSTOM_DB_NAME`     | Nome do banco de dados    | `crm_waha`                            |
 
 ## 📝 Exemplos de Strings de Conexão
 
@@ -174,12 +174,14 @@ Após reiniciar, as tabelas do banco de dados serão criadas automaticamente na 
 Para verificar manualmente:
 
 **MySQL:**
+
 ```bash
 mysql -u crm_user -p crm_waha
 SHOW TABLES;
 ```
 
 **PostgreSQL:**
+
 ```bash
 psql -U crm_user -d crm_waha
 \dt
@@ -198,6 +200,7 @@ Você deve ver tabelas como: `users`, `contacts`, `leads`, `conversations`, etc.
 ### Boas Práticas
 
 1. **Use senhas fortes** para o usuário do banco de dados
+
    ```bash
    # Gere uma senha segura
    openssl rand -base64 32
@@ -206,6 +209,7 @@ Você deve ver tabelas como: `users`, `contacts`, `leads`, `conversations`, etc.
 2. **Restrinja acesso** ao banco de dados apenas para IPs conhecidos
 
 3. **Use SSL/TLS** para conexões remotas
+
    ```
    mysql://usuario:senha@host:3306/banco?sslMode=require
    postgresql://usuario:senha@host:5432/banco?sslmode=require
@@ -243,6 +247,7 @@ auditLogs                - Logs de auditoria
 **Causa:** O servidor de banco de dados não está acessível
 
 **Solução:**
+
 - Verifique se o servidor está rodando
 - Verifique o host e porta
 - Verifique o firewall
@@ -252,6 +257,7 @@ auditLogs                - Logs de auditoria
 **Causa:** Credenciais incorretas ou permissões insuficientes
 
 **Solução:**
+
 ```sql
 -- Verifique o usuário
 SELECT user, host FROM mysql.user WHERE user='crm_user';
@@ -269,6 +275,7 @@ FLUSH PRIVILEGES;
 **Causa:** Usuário não existe
 
 **Solução:**
+
 ```sql
 -- Crie o usuário
 CREATE USER crm_user WITH PASSWORD 'senha_segura';
@@ -280,6 +287,7 @@ GRANT ALL PRIVILEGES ON DATABASE crm_waha TO crm_user;
 **Causa:** O banco de dados não foi criado
 
 **Solução:**
+
 ```sql
 -- MySQL
 CREATE DATABASE crm_waha CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -293,6 +301,7 @@ CREATE DATABASE crm_waha;
 **Causa:** As migrações não foram aplicadas ou há incompatibilidade de schema
 
 **Solução:**
+
 1. Verifique se as tabelas foram criadas
 2. Reinicie o servidor
 3. Verifique os logs em `.manus-logs/devserver.log`

@@ -11,7 +11,9 @@ import {
 import { SignJWT, jwtVerify } from "jose";
 import { ENV } from "../_core/env";
 
-const JWT_SECRET = new TextEncoder().encode(ENV.cookieSecret || "default-secret-change-in-production");
+const JWT_SECRET = new TextEncoder().encode(
+  ENV.sessionSecret || "default-secret-change-in-production"
+);
 const JWT_EXPIRY = "7d";
 
 function createToken(user: { id: number; email: string; role: string }) {
@@ -46,7 +48,11 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const user = await createLocalUser(input.email, input.password, input.name);
+      const user = await createLocalUser(
+        input.email,
+        input.password,
+        input.name
+      );
       if (!user) {
         throw new Error("Failed to create user");
       }
@@ -155,7 +161,7 @@ export const authRouter = router({
         token = authHeader.slice(7);
       }
     }
-    
+
     if (!token) {
       return null;
     }
@@ -189,7 +195,7 @@ export const authRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const user = ctx.user!;
-      
+
       // Verify current password
       const verified = await verifyLocalUser(user.email, input.currentPassword);
       if (!verified) {

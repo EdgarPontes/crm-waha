@@ -1,9 +1,26 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
 import { Users, MessageSquare, TrendingUp, Clock } from "lucide-react";
 
 export default function Dashboard() {
@@ -23,10 +40,13 @@ export default function Dashboard() {
     );
   }
 
-  const stageData = (metrics?.stages as Array<{ name: string; leadCount: number }> | undefined)?.map((s) => ({
-    name: s.name,
-    leads: s.leadCount,
-  })) || [];
+  const stageData =
+    (
+      metrics?.stages as Array<{ name: string; leadCount: number }> | undefined
+    )?.map(s => ({
+      name: s.name,
+      leads: s.leadCount,
+    })) || [];
 
   const conversionData = [
     { name: "Criados", value: metrics?.leads?.total || 0 },
@@ -41,7 +61,8 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-2">
-            Bem-vindo, {user?.name || "Usuário"}! Aqui está um resumo do seu CRM.
+            Bem-vindo, {user?.name || "Usuário"}! Aqui está um resumo do seu
+            CRM.
           </p>
         </div>
 
@@ -49,11 +70,15 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Conversas Ativas</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Conversas Ativas
+              </CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics?.conversations?.active || 0}</div>
+              <div className="text-2xl font-bold">
+                {metrics?.conversations?.active || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {metrics?.conversations?.waitingHuman || 0} aguardando atendente
               </p>
@@ -62,11 +87,15 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Leads Totais</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Leads Totais
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics?.leads?.total || 0}</div>
+              <div className="text-2xl font-bold">
+                {metrics?.leads?.total || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {metrics?.leads?.won || 0} convertidos
               </p>
@@ -75,27 +104,31 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Taxa de Conversão
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics?.metrics?.conversionRate || 0}%</div>
-              <p className="text-xs text-muted-foreground">
-                Últimos 30 dias
-              </p>
+              <div className="text-2xl font-bold">
+                {metrics?.metrics?.conversionRate || 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tempo Médio Resposta</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Tempo Médio Resposta
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics?.metrics?.avgResponseTime || 0}m</div>
-              <p className="text-xs text-muted-foreground">
-                Minutos
-              </p>
+              <div className="text-2xl font-bold">
+                {metrics?.metrics?.avgResponseTime || 0}m
+              </div>
+              <p className="text-xs text-muted-foreground">Minutos</p>
             </CardContent>
           </Card>
         </div>
@@ -113,7 +146,12 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={stageData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                  <XAxis
+                    dataKey="name"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
                   <YAxis />
                   <Tooltip />
                   <Bar dataKey="leads" fill="#3b82f6" />
@@ -125,9 +163,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Funil de Conversão</CardTitle>
-              <CardDescription>
-                Leads criados vs. convertidos
-              </CardDescription>
+              <CardDescription>Leads criados vs. convertidos</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -160,12 +196,20 @@ export default function Dashboard() {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total de Conversas</p>
-                    <p className="text-2xl font-bold">{metrics?.conversations?.total || 0}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Total de Conversas
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics?.conversations?.total || 0}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Conversas Encerradas</p>
-                    <p className="text-2xl font-bold">{metrics?.conversations?.closed || 0}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Conversas Encerradas
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics?.conversations?.closed || 0}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -178,7 +222,9 @@ export default function Dashboard() {
                 <CardTitle>Métricas de Conversas</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Funcionalidade em desenvolvimento...</p>
+                <p className="text-muted-foreground">
+                  Funcionalidade em desenvolvimento...
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -189,7 +235,9 @@ export default function Dashboard() {
                 <CardTitle>Métricas de Leads</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Funcionalidade em desenvolvimento...</p>
+                <p className="text-muted-foreground">
+                  Funcionalidade em desenvolvimento...
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -200,7 +248,9 @@ export default function Dashboard() {
                 <CardTitle>Métricas de IA</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Funcionalidade em desenvolvimento...</p>
+                <p className="text-muted-foreground">
+                  Funcionalidade em desenvolvimento...
+                </p>
               </CardContent>
             </Card>
           </TabsContent>

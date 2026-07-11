@@ -5,11 +5,13 @@
 Para usar a integração com WAHA, você precisa configurar as seguintes variáveis de ambiente:
 
 ### 1. WAHA_API_URL
+
 - **Descrição**: URL base da API WAHA
 - **Exemplo**: `http://localhost:3001` ou `https://waha.example.com`
 - **Padrão**: `http://localhost:3001`
 
 ### 2. WAHA_API_KEY (Opcional)
+
 - **Descrição**: Chave de API para autenticação com WAHA
 - **Exemplo**: `seu-api-key-aqui`
 - **Padrão**: Não definido (sem autenticação)
@@ -38,6 +40,7 @@ WAHA_API_KEY=sua-chave-api-opcional
 A integração utiliza os seguintes endpoints da API WAHA:
 
 ### Sessões
+
 - `GET /sessions` - Listar todas as sessões
 - `GET /sessions/{sessionName}` - Obter informações de uma sessão
 - `POST /sessions` - Criar nova sessão
@@ -46,14 +49,17 @@ A integração utiliza os seguintes endpoints da API WAHA:
 - `DELETE /sessions/{sessionName}` - Deletar sessão
 
 ### Mensagens
+
 - `POST /sessions/{sessionName}/messages` - Enviar mensagem
 - `GET /sessions/{sessionName}/chats/{chatId}/messages` - Obter histórico
 - `POST /sessions/{sessionName}/messages/{messageId}/read` - Marcar como lida
 
 ### Contatos
+
 - `GET /sessions/{sessionName}/contacts/{contactId}` - Obter informações de contato
 
 ### Webhooks
+
 - `POST /sessions/{sessionName}/webhooks` - Registrar webhook
 - `DELETE /sessions/{sessionName}/webhooks/{webhookId}` - Remover webhook
 
@@ -76,6 +82,7 @@ A aplicação processa os seguintes eventos WAHA:
 ## Fluxo de Funcionamento
 
 ### 1. Criar Sessão
+
 ```
 POST /api/trpc/waha.createSession
 {
@@ -84,20 +91,24 @@ POST /api/trpc/waha.createSession
 ```
 
 ### 2. Obter QR Code
+
 ```
 GET /api/trpc/waha.getQRCode?sessionName=vendas
 ```
 
 ### 3. Escanear QR Code
+
 - Abra WhatsApp no seu celular
 - Vá para Configurações → Dispositivos Vinculados
 - Escaneie o QR Code exibido
 
 ### 4. Sessão Conectada
+
 - Após escanear, a sessão mudará para status "connected"
 - Agora você pode enviar e receber mensagens
 
 ### 5. Receber Mensagens
+
 - Quando uma mensagem é recebida, o WAHA envia um webhook
 - A aplicação processa o evento e salva a mensagem no banco de dados
 - A conversa é criada automaticamente se não existir
@@ -105,16 +116,19 @@ GET /api/trpc/waha.getQRCode?sessionName=vendas
 ## Troubleshooting
 
 ### Erro: "Data truncated for column 'role'"
+
 - Este é um erro de autenticação relacionado ao schema de usuários
 - Verifique se o banco de dados foi migrado corretamente
 - Limpe os cookies e faça login novamente
 
 ### Erro: "WAHA API não respondeu"
+
 - Verifique se a URL da API WAHA está correta
 - Certifique-se de que a instância WAHA está rodando
 - Verifique a conectividade de rede
 
 ### Erro: "QR Code expirado"
+
 - QR Codes do WAHA expiram em 2 minutos
 - Clique em "Renovar QR Code" para gerar um novo
 
@@ -123,16 +137,19 @@ GET /api/trpc/waha.getQRCode?sessionName=vendas
 Para testar a integração localmente:
 
 1. Instale e rode uma instância WAHA:
+
    ```bash
    docker run -d -p 3001:3001 devlikeapro/waha:latest
    ```
 
 2. Configure as variáveis de ambiente:
+
    ```
    WAHA_API_URL=http://localhost:3001
    ```
 
 3. Inicie o servidor de desenvolvimento:
+
    ```bash
    pnpm dev
    ```

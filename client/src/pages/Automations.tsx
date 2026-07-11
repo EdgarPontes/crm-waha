@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -27,7 +39,7 @@ export default function Automations() {
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  
+
   const [formData, setFormData] = useState({
     name: "",
     trigger: "keyword",
@@ -60,17 +72,19 @@ export default function Automations() {
   };
 
   const handleUpdate = (id: number) => {
-    setAutomations(automations.map(a => 
-      a.id === id 
-        ? {
-            ...a,
-            name: formData.name,
-            trigger: formData.triggerValue,
-            action: formData.actionValue,
-            isActive: formData.isActive,
-          }
-        : a
-    ));
+    setAutomations(
+      automations.map(a =>
+        a.id === id
+          ? {
+              ...a,
+              name: formData.name,
+              trigger: formData.triggerValue,
+              action: formData.actionValue,
+              isActive: formData.isActive,
+            }
+          : a
+      )
+    );
     resetForm();
   };
 
@@ -92,7 +106,11 @@ export default function Automations() {
   };
 
   const handleSave = () => {
-    if (!formData.name.trim() || !formData.triggerValue.trim() || !formData.actionValue.trim()) {
+    if (
+      !formData.name.trim() ||
+      !formData.triggerValue.trim() ||
+      !formData.actionValue.trim()
+    ) {
       alert("Preencha todos os campos");
       return;
     }
@@ -161,19 +179,26 @@ export default function Automations() {
                 <Input
                   placeholder="Ex: Mover para Qualificação se disser 'preço'"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>SE (Gatilho)</Label>
-                  <Select value={formData.trigger} onValueChange={(v) => setFormData({ ...formData, trigger: v })}>
+                  <Select
+                    value={formData.trigger}
+                    onValueChange={v =>
+                      setFormData({ ...formData, trigger: v })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {triggerTypes.map((t) => (
+                      {triggerTypes.map(t => (
                         <SelectItem key={t.value} value={t.value}>
                           {t.label}
                         </SelectItem>
@@ -185,9 +210,15 @@ export default function Automations() {
                 <div className="space-y-2">
                   <Label>Valor do Gatilho</Label>
                   <Input
-                    placeholder={formData.trigger === "keyword" ? "Ex: preço, orçamento" : "Valor"}
+                    placeholder={
+                      formData.trigger === "keyword"
+                        ? "Ex: preço, orçamento"
+                        : "Valor"
+                    }
                     value={formData.triggerValue}
-                    onChange={(e) => setFormData({ ...formData, triggerValue: e.target.value })}
+                    onChange={e =>
+                      setFormData({ ...formData, triggerValue: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -195,12 +226,15 @@ export default function Automations() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>ENTÃO (Ação)</Label>
-                  <Select value={formData.action} onValueChange={(v) => setFormData({ ...formData, action: v })}>
+                  <Select
+                    value={formData.action}
+                    onValueChange={v => setFormData({ ...formData, action: v })}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {actionTypes.map((a) => (
+                      {actionTypes.map(a => (
                         <SelectItem key={a.value} value={a.value}>
                           {a.label}
                         </SelectItem>
@@ -212,9 +246,15 @@ export default function Automations() {
                 <div className="space-y-2">
                   <Label>Valor da Ação</Label>
                   <Input
-                    placeholder={formData.action === "move_stage" ? "Ex: Qualificação" : "Valor"}
+                    placeholder={
+                      formData.action === "move_stage"
+                        ? "Ex: Qualificação"
+                        : "Valor"
+                    }
                     value={formData.actionValue}
-                    onChange={(e) => setFormData({ ...formData, actionValue: e.target.value })}
+                    onChange={e =>
+                      setFormData({ ...formData, actionValue: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -222,17 +262,17 @@ export default function Automations() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  onCheckedChange={checked =>
+                    setFormData({ ...formData, isActive: checked })
+                  }
                 />
                 <Label className="cursor-pointer">Ativar automaticamente</Label>
               </div>
 
               <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-              >
-                {editingId ? "Atualizar" : "Criar"} Automação
-              </Button>
+                <Button onClick={handleSave}>
+                  {editingId ? "Atualizar" : "Criar"} Automação
+                </Button>
                 <Button variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
@@ -246,24 +286,34 @@ export default function Automations() {
           {automations.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center text-muted-foreground">
-                Nenhuma automação criada. Clique em "Nova Automação" para começar.
+                Nenhuma automação criada. Clique em "Nova Automação" para
+                começar.
               </CardContent>
             </Card>
           ) : (
-            automations.map((automation) => (
-              <Card key={automation.id} className={!automation.isActive ? "opacity-60" : ""}>
+            automations.map(automation => (
+              <Card
+                key={automation.id}
+                className={!automation.isActive ? "opacity-60" : ""}
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="font-semibold">{automation.name}</h3>
-                        <Badge variant={automation.isActive ? "default" : "secondary"}>
+                        <Badge
+                          variant={
+                            automation.isActive ? "default" : "secondary"
+                          }
+                        >
                           {automation.isActive ? "Ativa" : "Inativa"}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-3">
-                        <strong>SE</strong> {automation.trigger} contém "{automation.trigger}" <br />
-                        <strong>ENTÃO</strong> {automation.action} para "{automation.action}"
+                        <strong>SE</strong> {automation.trigger} contém "
+                        {automation.trigger}" <br />
+                        <strong>ENTÃO</strong> {automation.action} para "
+                        {automation.action}"
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Executada {automation.executedCount || 0} vezes
@@ -302,8 +352,8 @@ export default function Automations() {
               • SE mensagem contém "preço" → ENTÃO mover para "Qualificação"
               <br />
               • SE inatividade por 24h → ENTÃO enviar follow-up automático
-              <br />
-              • SE mensagem contém "urgente" → ENTÃO adicionar tag "Prioridade Alta"
+              <br />• SE mensagem contém "urgente" → ENTÃO adicionar tag
+              "Prioridade Alta"
             </p>
           </CardContent>
         </Card>

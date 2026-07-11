@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
-import { listConversations, listLeadsByStage, getStagesByPipeline, getDefaultPipeline } from "../db";
+import {
+  listConversations,
+  listLeadsByStage,
+  getStagesByPipeline,
+  getDefaultPipeline,
+} from "../db";
 
 interface Stage {
   id: number;
@@ -20,7 +25,11 @@ export const dashboardRouter = router({
     .query(async ({ input }) => {
       // Get conversations metrics
       const activeConversations = await listConversations("active", 1000, 0);
-      const waitingConversations = await listConversations("waiting_human", 1000, 0);
+      const waitingConversations = await listConversations(
+        "waiting_human",
+        1000,
+        0
+      );
       const closedConversations = await listConversations("closed", 1000, 0);
 
       // Get pipeline metrics
@@ -50,13 +59,20 @@ export const dashboardRouter = router({
           active: activeConversations.length,
           waitingHuman: waitingConversations.length,
           closed: closedConversations.length,
-          total: activeConversations.length + waitingConversations.length + closedConversations.length,
+          total:
+            activeConversations.length +
+            waitingConversations.length +
+            closedConversations.length,
         },
         leads: {
           total: totalLeads,
           byStage: leadsByStage,
           won: wonLeads,
-          lost: stages.find((s: Stage) => s.name === "Perdido") ? leadsByStage[stages.find((s: Stage) => s.name === "Perdido")!.id] || 0 : 0,
+          lost: stages.find((s: Stage) => s.name === "Perdido")
+            ? leadsByStage[
+                stages.find((s: Stage) => s.name === "Perdido")!.id
+              ] || 0
+            : 0,
         },
         metrics: {
           conversionRate: parseFloat(conversionRate.toFixed(2)),

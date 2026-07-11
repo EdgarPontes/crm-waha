@@ -44,6 +44,7 @@ A migração cria as seguintes tabelas:
 ## Alterações na Tabela Users
 
 A coluna `role` foi modificada para usar os valores:
+
 - `Administrador` (antes era `admin`)
 - `Supervisor`
 - `Atendente` (antes era `user`)

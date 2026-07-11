@@ -128,7 +128,10 @@ export const crmRouter = router({
     .mutation(async ({ input }) => {
       // First, get or create a contact with the provided info
       // @ts-ignore - TypeScript incorrectly infers argument count
-      const contact = await getOrCreateContact(input.phone || input.name, input.name);
+      const contact = await getOrCreateContact(
+        input.phone || input.name,
+        input.name
+      );
       if (!contact) {
         throw new Error("Failed to create contact");
       }
@@ -150,7 +153,10 @@ export const crmRouter = router({
     )
     .mutation(async ({ input }) => {
       // @ts-ignore - TypeScript incorrectly infers argument count
-      return updateLead(input.id, { notes: input.notes, metadata: input.metadata });
+      return updateLead(input.id, {
+        notes: input.notes,
+        metadata: input.metadata,
+      });
     }),
 
   deleteLead: protectedProcedure
