@@ -1,4 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import { COOKIE_NAME } from "@shared/const";
 import type { User } from "../../drizzle/schema";
 import { getUserById } from "../db";
 import { ENV } from "./env";
@@ -40,7 +41,7 @@ export async function createContext(
     let token: string | undefined;
 
     if (cookies) {
-      const match = cookies.match(/auth_token=([^;]+)/);
+      const match = cookies.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
       if (match) {
         token = match[1];
       }

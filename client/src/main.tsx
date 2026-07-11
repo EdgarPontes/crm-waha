@@ -1,5 +1,4 @@
 import { trpc } from "@/lib/trpc";
-import { COOKIE_NAME } from "@shared/const";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
@@ -41,10 +40,7 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
-      headers() {
-        return {};
-      },
-      fetch(input, init) {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
         return globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",

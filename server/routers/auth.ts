@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COOKIE_NAME } from "@shared/const";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import {
   createLocalUser,
@@ -57,7 +58,7 @@ export const authRouter = router({
         throw new Error("Failed to create user");
       }
 
-      const token = createToken({
+      const token = await createToken({
         id: user.id,
         email: user.email,
         role: user.role,
@@ -71,7 +72,7 @@ export const authRouter = router({
         path: "/",
       };
 
-      ctx.res.cookie("auth_token", token, cookieOptions);
+      ctx.res.cookie(COOKIE_NAME, token, cookieOptions);
 
       return {
         user: {
@@ -99,7 +100,7 @@ export const authRouter = router({
         throw new Error("Invalid email or password");
       }
 
-      const token = createToken({
+      const token = await createToken({
         id: user.id,
         email: user.email,
         role: user.role,
@@ -113,7 +114,7 @@ export const authRouter = router({
         path: "/",
       };
 
-      ctx.res.cookie("auth_token", token, cookieOptions);
+      ctx.res.cookie(COOKIE_NAME, token, cookieOptions);
 
       // Update last signed in
       await updateUserLastSignedIn(user.id);
@@ -132,7 +133,7 @@ export const authRouter = router({
 
   // Logout user
   logout: publicProcedure.mutation(({ ctx }) => {
-    ctx.res.clearCookie("auth_token", {
+    ctx.res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
       secure: ENV.isProduction,
       sameSite: "lax",
@@ -148,7 +149,7 @@ export const authRouter = router({
     let token: string | undefined;
 
     if (cookies) {
-      const match = cookies.match(/auth_token=([^;]+)/);
+      const match = cookies.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
       if (match) {
         token = match[1];
       }

@@ -18,6 +18,7 @@ services:
 
       # Alternativa: usar URL de conexão completa
       CUSTOM_DB_URL: ${DATABASE_URL}
+      CUSTOM_DB_TYPE: postgres
 
       # Configurações WAHA (opcional)
       WAHA_API_URL: ${WAHA_API_URL:-http://localhost:3001}

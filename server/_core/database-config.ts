@@ -52,10 +52,28 @@
 export type DatabaseType = "mysql" | "postgres";
 
 export function getDatabaseType(): DatabaseType {
-  const type = (process.env.CUSTOM_DB_TYPE || "mysql").toLowerCase();
-
+  // 1. Check CUSTOM_DB_TYPE or DB_TYPE env vars
+  const type = (process.env.CUSTOM_DB_TYPE || process.env.DB_TYPE || "").toLowerCase();
   if (type === "postgres" || type === "postgresql") {
     return "postgres";
+  }
+  if (type === "mysql") {
+    return "mysql";
+  }
+
+  // 2. Auto-detect from connection string
+  const connectionString =
+    process.env.DATABASE_URL || process.env.DB_URL || process.env.CUSTOM_DB_URL;
+  if (connectionString) {
+    if (
+      connectionString.startsWith("postgresql://") ||
+      connectionString.startsWith("postgres://")
+    ) {
+      return "postgres";
+    }
+    if (connectionString.startsWith("mysql://")) {
+      return "mysql";
+    }
   }
 
   return "mysql";
