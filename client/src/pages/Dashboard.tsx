@@ -23,7 +23,7 @@ export default function Dashboard() {
     );
   }
 
-  const stageData = metrics?.stages?.map(s => ({
+  const stageData = (metrics?.stages as Array<{ name: string; leadCount: number }> | undefined)?.map((s) => ({
     name: s.name,
     leads: s.leadCount,
   })) || [];

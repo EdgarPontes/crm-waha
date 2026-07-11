@@ -159,12 +159,14 @@ export default (async () => {
     import("vite-plugin-manus-runtime"),
   ]);
 
+  const manusRuntimePlugin = vitePluginManusRuntime();
+  const manusDebugPlugin = vitePluginManusDebugCollector();
   const plugins: Plugin[] = [
     react(),
     tailwindcss(),
     jsxLocPlugin(),
-    vitePluginManusRuntime(),
-    vitePluginManusDebugCollector(),
+    manusRuntimePlugin as any,
+    manusDebugPlugin as any,
   ];
 
   return defineConfig({

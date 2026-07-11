@@ -2,6 +2,13 @@ import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { listConversations, listLeadsByStage, getStagesByPipeline, getDefaultPipeline } from "../db";
 
+interface Stage {
+  id: number;
+  name: string;
+  pipelineId: number;
+  order: number;
+}
+
 export const dashboardRouter = router({
   metrics: protectedProcedure
     .input(
@@ -28,7 +35,8 @@ export const dashboardRouter = router({
 
       // Calculate conversion rate (simplified)
       const totalLeads = Object.values(leadsByStage).reduce((a, b) => a + b, 0);
-      const wonLeads = leadsByStage[stages.find(s => s.name === "Ganho")?.id || 0] || 0;
+      const wonStage = stages.find((s: Stage) => s.name === "Ganho");
+      const wonLeads = wonStage ? leadsByStage[wonStage.id] || 0 : 0;
       const conversionRate = totalLeads > 0 ? (wonLeads / totalLeads) * 100 : 0;
 
       // Calculate average response time (placeholder)
@@ -48,7 +56,7 @@ export const dashboardRouter = router({
           total: totalLeads,
           byStage: leadsByStage,
           won: wonLeads,
-          lost: leadsByStage[stages.find(s => s.name === "Perdido")?.id || 0] || 0,
+          lost: stages.find((s: Stage) => s.name === "Perdido") ? leadsByStage[stages.find((s: Stage) => s.name === "Perdido")!.id] || 0 : 0,
         },
         metrics: {
           conversionRate: parseFloat(conversionRate.toFixed(2)),
@@ -56,7 +64,7 @@ export const dashboardRouter = router({
           avgAttendanceTime,
           leadsCreated: totalLeads,
         },
-        stages: stages.map(s => ({
+        stages: stages.map((s: Stage) => ({
           id: s.id,
           name: s.name,
           leadCount: leadsByStage[s.id] || 0,

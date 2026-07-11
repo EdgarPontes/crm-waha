@@ -28,6 +28,24 @@ interface Conversation {
   };
 }
 
+interface ConversationListItem {
+  id: number;
+  contactId: number;
+  leadId?: number;
+  status: "active" | "waiting_human" | "closed";
+  currentAssignedUserId?: number;
+  lastMessageAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  unreadCount?: number;
+  contact?: {
+    id: number;
+    whatsappNumber: string;
+    name: string;
+    lastInteractionAt: Date;
+  };
+}
+
 export default function Conversations() {
   const { user } = useAuth();
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
@@ -35,7 +53,7 @@ export default function Conversations() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch conversations
-  const { data: conversations, isLoading } = trpc.conversations.list.useQuery({
+  const { data: conversations, isLoading } = trpc.conversations.list.useQuery<ConversationListItem[]>({
     status: "active",
     limit: 50,
   });

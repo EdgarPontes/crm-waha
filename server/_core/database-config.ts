@@ -63,14 +63,26 @@ export function getDatabaseType(): DatabaseType {
 
 export function buildCustomDatabaseUrl(): string | null {
   const dbType = getDatabaseType();
-  
-  // Se houver uma URL customizada completa, use-a
+
+  // Prioridade 1: DATABASE_URL (formato padrão)
+  if (process.env.DATABASE_URL) {
+    console.log(`[Database] Usando DATABASE_URL (${dbType})`);
+    return process.env.DATABASE_URL;
+  }
+
+  // Prioridade 2: DB_URL (compatibilidade com .env existente)
+  if (process.env.DB_URL) {
+    console.log(`[Database] Usando DB_URL (${dbType})`);
+    return process.env.DB_URL;
+  }
+
+  // Prioridade 3: CUSTOM_DB_URL (configuração customizada anterior)
   if (process.env.CUSTOM_DB_URL) {
-    console.log(`[Database] Usando URL de conexão customizada (${dbType})`);
+    console.log(`[Database] Usando CUSTOM_DB_URL (${dbType})`);
     return process.env.CUSTOM_DB_URL;
   }
 
-  // Caso contrário, construa a URL a partir dos componentes
+  // Caso contrário, construa a URL a partir dos componentes individuais
   const host = process.env.CUSTOM_DB_HOST;
   const port = process.env.CUSTOM_DB_PORT;
   const user = process.env.CUSTOM_DB_USER;
@@ -82,7 +94,7 @@ export function buildCustomDatabaseUrl(): string | null {
     const defaultPort = dbType === "postgres" ? "5432" : "3306";
     const finalPort = port || defaultPort;
     const protocol = dbType === "postgres" ? "postgresql" : "mysql";
-    
+
     const url = `${protocol}://${user}:${password}@${host}:${finalPort}/${database}`;
     console.log(`[Database] Usando banco de dados customizado (${dbType}): ${host}:${finalPort}/${database}`);
     return url;

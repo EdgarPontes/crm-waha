@@ -29,6 +29,15 @@ interface Stage {
   leadCount?: number;
 }
 
+interface Pipeline {
+  id: number;
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export default function Kanban() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,36 +45,54 @@ export default function Kanban() {
   const [leadsByStage, setLeadsByStage] = useState<Record<number, Lead[]>>({});
 
   // Fetch pipeline and stages
-  const { data: pipeline } = trpc.crm.pipelines.getDefault.useQuery();
-  const { data: stagesData } = trpc.crm.pipelines.getStages.useQuery(
+  const { data: pipeline } = trpc.crm.getDefaultPipeline.useQuery<Pipeline | null>();
+  const { data: stagesData } = trpc.crm.getStagesByPipeline.useQuery<Stage[]>(
     { pipelineId: pipeline?.id || 0 },
     { enabled: !!pipeline?.id }
   );
 
   // Fetch leads for each stage
-  const { data: leadsData } = trpc.crm.leads.list.useQuery(
-    { limit: 1000 },
-    { enabled: !!stagesData }
+  const { data: leadsData } = trpc.crm.listLeadsByPipeline.useQuery<Lead[]>(
+    { pipelineId: pipeline?.id || 0 },
+    { enabled: !!pipeline?.id }
   );
 
-  const moveLeadMutation = trpc.crm.leads.moveToStage.useMutation({
+  const moveLeadMutation = trpc.crm.moveLeadToStage.useMutation({
     onSuccess: () => {
       // Refetch leads after moving
-      // In a real app, you'd use React Query's invalidateQueries
     },
   });
 
   useEffect(() => {
     if (stagesData) {
-      const stagesWithCounts = stagesData.map(s => ({ ...s, leadCount: 0 }));
+      const stagesWithCounts = stagesData.map((s: Stage) => ({ ...s, leadCount: 0 }));
       setStages(stagesWithCounts);
       const grouped: Record<number, Lead[]> = {};
-      stagesData.forEach(stage => {
+      stagesData.forEach((stage: Stage) => {
         grouped[stage.id] = [];
       });
       setLeadsByStage(grouped);
     }
   }, [stagesData]);
+
+  useEffect(() => {
+    if (leadsData) {
+      const grouped: Record<number, Lead[]> = {};
+      stages.forEach((stage: Stage) => {
+        grouped[stage.id] = [];
+      });
+      leadsData.forEach((lead: Lead) => {
+        if (grouped[lead.stageId]) {
+          grouped[lead.stageId].push(lead);
+        }
+      });
+      setLeadsByStage(grouped);
+      setStages(prev => prev.map((stage: Stage) => ({
+        ...stage,
+        leadCount: grouped[stage.id]?.length || 0,
+      })));
+    }
+  }, [leadsData, stages]);
 
   const handleDragStart = (e: React.DragEvent, lead: Lead) => {
     e.dataTransfer.effectAllowed = "move";

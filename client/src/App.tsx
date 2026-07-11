@@ -13,20 +13,141 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import Automations from "./pages/Automations";
 import TeamManagement from "./pages/TeamManagement";
 import WhatsAppSessions from "./pages/WhatsAppSessions";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import { useAuth } from "./_core/hooks/useAuth";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth({
+    redirectOnUnauthenticated: true,
+    redirectPath: "/login",
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <div />;
+  }
+
+  return <>{children}</>;
+}
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/kanban" component={Kanban} />
-      <Route path="/conversations" component={Conversations} />
-      <Route path="/ai-settings" component={AISettings} />
-      <Route path="/knowledge-base" component={KnowledgeBase} />
-      <Route path="/automations" component={Automations} />
-      <Route path="/team-management" component={TeamManagement} />
-      <Route path="/whatsapp-sessions" component={WhatsAppSessions} />
+      <Route
+        path="/login"
+        component={() => (
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        )}
+      />
+      <Route
+        path="/register"
+        component={() => (
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        )}
+      />
+
+      <Route
+        path="/"
+        component={() => (
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/dashboard"
+        component={() => (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/kanban"
+        component={() => (
+          <ProtectedRoute>
+            <Kanban />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/conversations"
+        component={() => (
+          <ProtectedRoute>
+            <Conversations />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/ai-settings"
+        component={() => (
+          <ProtectedRoute>
+            <AISettings />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/knowledge-base"
+        component={() => (
+          <ProtectedRoute>
+            <KnowledgeBase />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/automations"
+        component={() => (
+          <ProtectedRoute>
+            <Automations />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/team-management"
+        component={() => (
+          <ProtectedRoute>
+            <TeamManagement />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/whatsapp-sessions"
+        component={() => (
+          <ProtectedRoute>
+            <WhatsAppSessions />
+          </ProtectedRoute>
+        )}
+      />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

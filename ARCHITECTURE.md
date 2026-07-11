@@ -9,6 +9,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 ## Stack Técnico
 
 ### Backend
+
 - **Node.js 22+** com Express 4
 - **tRPC 11** para comunicação type-safe
 - **PostgreSQL** como banco de dados
@@ -17,6 +18,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - **JWT** para autenticação
 
 ### Frontend
+
 - **React 19** com Vite
 - **TypeScript** para tipagem
 - **Tailwind CSS 4** para estilos
@@ -26,6 +28,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - **Socket.IO Client** para eventos em tempo real
 
 ### Infraestrutura
+
 - **Docker** para containerização
 - **WAHA** como API do WhatsApp
 - **Manus Forge API** para LLM e storage
@@ -37,6 +40,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 ### Tabelas Principais
 
 #### Users (Autenticação)
+
 - `id` (PK)
 - `openId` (Manus OAuth)
 - `name`, `email`
@@ -44,6 +48,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`, `lastSignedIn`
 
 #### Contacts (Contatos)
+
 - `id` (PK)
 - `whatsappNumber` (UNIQUE)
 - `name`, `avatar`
@@ -52,6 +57,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`, `lastInteractionAt`
 
 #### Leads (Leads/Oportunidades)
+
 - `id` (PK)
 - `contactId` (FK)
 - `companyId` (FK)
@@ -62,6 +68,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`, `closedAt`
 
 #### Conversations (Conversas)
+
 - `id` (PK)
 - `contactId` (FK)
 - `companyId` (FK)
@@ -74,6 +81,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`
 
 #### Messages (Mensagens)
+
 - `id` (PK)
 - `conversationId` (FK)
 - `senderId` (FK → Users, NULL se for contato)
@@ -87,6 +95,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`
 
 #### Pipelines (Funis de Vendas)
+
 - `id` (PK)
 - `companyId` (FK)
 - `name`
@@ -95,6 +104,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`
 
 #### Stages (Colunas do Kanban)
+
 - `id` (PK)
 - `pipelineId` (FK)
 - `name` (Novo Lead, Primeiro Contato, Qualificação, Proposta, Negociação, Fechamento, Ganho, Perdido)
@@ -102,6 +112,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`
 
 #### Tags (Etiquetas)
+
 - `id` (PK)
 - `companyId` (FK)
 - `name`
@@ -109,6 +120,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`
 
 #### WhatsAppSessions (Sessões WAHA)
+
 - `id` (PK)
 - `companyId` (FK)
 - `sessionName` (UNIQUE per company)
@@ -119,6 +131,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`
 
 #### AIConfigurations (Configurações de IA)
+
 - `id` (PK)
 - `companyId` (FK)
 - `provider` (openai, claude, gemini, ollama, openrouter)
@@ -130,6 +143,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`
 
 #### KnowledgeBaseDocuments (Base de Conhecimento)
+
 - `id` (PK)
 - `companyId` (FK)
 - `fileName`
@@ -141,6 +155,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`
 
 #### Automations (Regras de Automação)
+
 - `id` (PK)
 - `companyId` (FK)
 - `name`
@@ -152,6 +167,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`, `updatedAt`
 
 #### AuditLogs (Auditoria)
+
 - `id` (PK)
 - `companyId` (FK)
 - `userId` (FK)
@@ -162,6 +178,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 - `createdAt`
 
 #### Notes (Notas Internas)
+
 - `id` (PK)
 - `conversationId` (FK)
 - `userId` (FK)
@@ -173,6 +190,7 @@ Sistema completo de CRM omnichannel com integração nativa ao WhatsApp via WAHA
 ## Fluxos Principais
 
 ### 1. Recebimento de Mensagem WhatsApp
+
 ```
 WAHA Webhook (message event)
   ↓
@@ -199,6 +217,7 @@ Emitir evento via Socket.IO para atualização em tempo real
 ```
 
 ### 2. Handoff para Atendente Humano
+
 ```
 IA detecta trigger (cliente pediu humano, reclamação, etc)
   ↓
@@ -216,6 +235,7 @@ Emitir evento Socket.IO
 ```
 
 ### 3. Drag-and-Drop no Kanban
+
 ```
 Usuário arrasta Lead entre colunas
   ↓
@@ -229,6 +249,7 @@ Emitir evento Socket.IO para todos os usuários
 ```
 
 ### 4. Configuração de IA
+
 ```
 Administrador acessa painel de configurações
   ↓
@@ -250,16 +271,19 @@ Salva configuração
 ## Endpoints tRPC Principais
 
 ### Auth
+
 - `auth.me` - Obter usuário atual
 - `auth.logout` - Fazer logout
 
 ### Contacts
+
 - `contacts.list` - Listar contatos com filtros
 - `contacts.get` - Obter detalhes de um contato
 - `contacts.create` - Criar contato manualmente
 - `contacts.update` - Atualizar contato
 
 ### Leads
+
 - `leads.list` - Listar leads com filtros
 - `leads.get` - Obter detalhes de um lead
 - `leads.update` - Atualizar lead
@@ -268,6 +292,7 @@ Salva configuração
 - `leads.removeTag` - Remover tag
 
 ### Conversations
+
 - `conversations.list` - Listar conversas
 - `conversations.get` - Obter conversa com histórico
 - `conversations.markAsRead` - Marcar como lida
@@ -276,10 +301,12 @@ Salva configuração
 - `conversations.close` - Encerrar conversa
 
 ### Messages
+
 - `messages.send` - Enviar mensagem
 - `messages.list` - Listar mensagens de uma conversa
 
 ### WhatsApp Sessions
+
 - `whatsapp.sessions.list` - Listar sessões
 - `whatsapp.sessions.create` - Criar nova sessão
 - `whatsapp.sessions.getQR` - Obter QR code
@@ -287,29 +314,35 @@ Salva configuração
 - `whatsapp.sessions.status` - Obter status
 
 ### Kanban
+
 - `kanban.stages.list` - Listar colunas
 - `kanban.leads.byStage` - Listar leads por coluna
 
 ### AI Configuration
+
 - `ai.config.get` - Obter configuração atual
 - `ai.config.update` - Atualizar configuração
 - `ai.config.testConnection` - Testar conexão
 
 ### Knowledge Base
+
 - `kb.documents.list` - Listar documentos
 - `kb.documents.upload` - Upload de documento
 - `kb.documents.delete` - Deletar documento
 
 ### Automations
+
 - `automations.list` - Listar automações
 - `automations.create` - Criar automação
 - `automations.update` - Atualizar automação
 - `automations.delete` - Deletar automação
 
 ### Dashboard
+
 - `dashboard.metrics` - Obter métricas do dashboard
 
 ### Users
+
 - `users.list` - Listar usuários (admin only)
 - `users.create` - Criar usuário (admin only)
 - `users.update` - Atualizar usuário (admin only)
@@ -320,6 +353,7 @@ Salva configuração
 ## Eventos Socket.IO
 
 ### Real-time Updates
+
 - `conversation:new` - Nova conversa criada
 - `conversation:message` - Nova mensagem
 - `conversation:status_changed` - Status alterado
@@ -345,26 +379,31 @@ Salva configuração
 ## Fases de Implementação
 
 ### Fase 1: Fundação
+
 - Schema Drizzle completo
 - Autenticação e autorização
 - Integração básica WAHA (conexão, envio/recebimento)
 
 ### Fase 2: CRM Base
+
 - Cadastro automático de contatos e leads
 - Tela de conversação básica
 - Kanban de vendas funcional
 
 ### Fase 3: IA e Automação
+
 - Integração com provedores de IA
 - Sistema de automações
 - Base de Conhecimento (RAG)
 
 ### Fase 4: Atendimento Humano
+
 - Fila de atendimento
 - Distribuição automática
 - Notas internas
 
 ### Fase 5: Dashboard e Refinamentos
+
 - Dashboard com métricas
 - Auditoria completa
 - Testes e otimizações

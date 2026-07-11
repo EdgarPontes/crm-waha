@@ -1,4 +1,4 @@
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { drizzle as drizzleMysql } from "drizzle-orm/mysql2";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import { buildCustomDatabaseUrl, getDatabaseType } from "./_core/database-config";
@@ -20,6 +20,7 @@ import {
   auditLogs,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import bcrypt from "bcryptjs";
 
 let _db: any = null;
 
@@ -55,8 +56,8 @@ export async function getDb() {
 // ============================================================================
 
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
+  if (!user.email && !user.openId) {
+    throw new Error("User email or openId is required for upsert");
   }
 
   const db = await getDb();
@@ -66,12 +67,18 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
+    const values: Partial<InsertUser> = {};
     const updateSet: Record<string, unknown> = {};
 
-    const textFields = ["name", "email", "loginMethod"] as const;
+    // Determine unique identifier
+    if (user.email) {
+      values.email = user.email;
+    }
+    if (user.openId) {
+      values.openId = user.openId;
+    }
+
+    const textFields = ["name", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
 
     const assignNullable = (field: TextField) => {
@@ -104,9 +111,18 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    // Use email or openId as the unique key for upsert
+    if (user.email) {
+      await db.insert(users).values(values).onConflictDoUpdate({
+        target: users.email,
+        set: updateSet,
+      });
+    } else if (user.openId) {
+      await db.insert(users).values(values).onConflictDoUpdate({
+        target: users.openId,
+        set: updateSet,
+      });
+    }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -142,6 +158,153 @@ export async function listUsers() {
   if (!db) return [];
 
   return await db.select().from(users);
+}
+
+// ============================================================================
+// LOCAL AUTH OPERATIONS (Email/Password)
+// ============================================================================
+
+export async function createLocalUser(
+  email: string,
+  password: string,
+  name?: string,
+  role: "Administrador" | "Supervisor" | "Atendente" = "Atendente"
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Check if user already exists
+  const existing = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (existing.length > 0) {
+    throw new Error("User with this email already exists");
+  }
+
+  // Hash password
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  // Create user
+  await db.insert(users).values({
+    email,
+    passwordHash,
+    name: name || email.split("@")[0],
+    loginMethod: "local",
+    role,
+    emailVerified: false,
+    lastSignedIn: new Date(),
+  });
+
+  // Fetch and return the created user (without passwordHash)
+  const created = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      loginMethod: users.loginMethod,
+      role: users.role,
+      emailVerified: users.emailVerified,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  return created.length > 0 ? created[0] : null;
+}
+
+export async function verifyLocalUser(email: string, password: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (result.length === 0) {
+    return null; // User not found
+  }
+
+  const user = result[0];
+
+  // Check if user has a password (local auth)
+  if (!user.passwordHash) {
+    return null; // User uses OAuth, not local auth
+  }
+
+  // Verify password
+  const isValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isValid) {
+    return null; // Invalid password
+  }
+
+  // Update lastSignedIn
+  await db
+    .update(users)
+    .set({ lastSignedIn: new Date() })
+    .where(eq(users.id, user.id));
+
+  // Return user without passwordHash
+  const { passwordHash: _, ...userWithoutPassword } = user;
+  return userWithoutPassword;
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUserPassword(userId: number, newPassword: string) {
+  const db = await getDb();
+  if (!db) return false;
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  await db
+    .update(users)
+    .set({ passwordHash, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+
+  return true;
+}
+
+export async function updateUserLastSignedIn(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(users)
+    .set({ lastSignedIn: new Date() })
+    .where(eq(users.id, userId));
+
+  return true;
+}
+
+export async function setUserEmailVerified(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+
+  await db
+    .update(users)
+    .set({ emailVerified: true, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+
+  return true;
 }
 
 // ============================================================================
