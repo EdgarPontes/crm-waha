@@ -4,7 +4,16 @@ import {
   getActiveAIConfiguration,
   getAIConfigurationByProvider,
   createAuditLog,
+  getConversationById,
+  getContactById,
+  listMessagesByConversation,
+  createMessage,
+  updateConversationStatus,
+  getLeadById,
+  getStagesByPipeline,
+  getDefaultPipeline,
 } from "../db";
+import { aiService, type AIConfig, type ChatMessage } from "../services/ai";
 
 export const aiRouter = router({
   config: router({
@@ -37,8 +46,18 @@ export const aiRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        // This would update the AI configuration in the database
-        // Placeholder implementation
+        const dbConfig: AIConfig = {
+          provider: input.provider,
+          apiKey: input.apiKey,
+          model: input.model,
+          systemPrompt: input.systemPrompt,
+          temperature: input.temperature,
+          maxTokens: input.maxTokens,
+          isActive: input.isActive,
+        };
+
+        aiService.setConfig(dbConfig);
+
         await createAuditLog(ctx.user?.id, "update", "ai_config", undefined, {
           provider: input.provider,
         });
@@ -65,15 +84,24 @@ export const aiRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        // This would test the connection to the AI provider
-        // Placeholder implementation
-        return {
-          success: true,
+        const config: AIConfig = {
           provider: input.provider,
+          apiKey: input.apiKey,
           model: input.model,
-          message: "Conexão testada com sucesso",
+          temperature: 0.7,
+          maxTokens: 2000,
         };
+
+        const result = await aiService.testConnection(config);
+        return result;
       }),
+
+    listConfigs: adminProcedure.query(async () => {
+      // Return all configured providers
+      return Array.from(["openai", "claude", "gemini", "ollama", "openrouter"]).map(
+        (p) => aiService.getConfig(p as any)
+      ).filter(Boolean);
+    }),
   }),
 
   // ========================================================================
@@ -93,19 +121,103 @@ export const aiRouter = router({
           systemPrompt: z.string().optional(),
         })
       )
-      .mutation(async ({ input }) => {
-        // This would call the AI provider to generate a response
-        // Placeholder implementation
+      .mutation(async ({ input, ctx }) => {
+        // Get active AI config
+        const activeConfig = await getActiveAIConfiguration();
+        if (!activeConfig || !activeConfig.isActive) {
+          throw new Error("Nenhuma configuração de IA ativa encontrada");
+        }
+
+        const config: AIConfig = {
+          provider: activeConfig.provider as any,
+          apiKey: activeConfig.apiKey,
+          model: activeConfig.model,
+          systemPrompt: activeConfig.systemPrompt || input.systemPrompt,
+          temperature: Number(activeConfig.temperature) || 0.7,
+          maxTokens: activeConfig.maxTokens || 2000,
+        };
+
+        // Build context from conversation
+        const conversation = await getConversationById(input.conversationId);
+        if (!conversation) {
+          throw new Error("Conversa não encontrada");
+        }
+
+        let contextPrompt = "";
+        if (conversation.contactId) {
+          const contact = await getContactById(conversation.contactId);
+          if (contact) {
+            // Get lead info if exists
+            let leadStage: string | undefined;
+            if (conversation.leadId) {
+              const lead = await getLeadById(conversation.leadId);
+              if (lead) {
+                const pipeline = await getDefaultPipeline();
+                if (pipeline) {
+                  const stages = await getStagesByPipeline(pipeline.id);
+                  const stage = stages.find((s) => s.id === lead.stageId);
+                  leadStage = stage?.name;
+                }
+              }
+            }
+
+            contextPrompt = aiService.buildContextPrompt({
+              name: contact.name || undefined,
+              whatsappNumber: contact.whatsappNumber || undefined,
+              tags: [], // Could add tags from lead
+              notes: undefined, // Could add notes from lead
+              leadStage,
+            });
+          }
+        }
+
+        // Combine system prompt with context
+        const fullSystemPrompt = [
+          config.systemPrompt || "Você é um atendente de vendas profissional e prestativo.",
+          contextPrompt,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
+
+        // Generate response
+        const aiMessages: ChatMessage[] = input.messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+
+        const response = await aiService.generateResponse(config, aiMessages, fullSystemPrompt);
+
+        // Save AI response as message
+        const savedMessage = await createMessage(
+          input.conversationId,
+          "text",
+          response.content,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          { aiGenerated: true, provider: config.provider, model: config.model }
+        );
+
         return {
           conversationId: input.conversationId,
-          response: "Resposta automática da IA",
-          messageId: `msg_${Date.now()}`,
+          response: response.content,
+          messageId: savedMessage?.id || `msg_${Date.now()}`,
+          usage: response.usage,
         };
+      }),
+
+    // Check if message should trigger handoff
+    checkHandoff: protectedProcedure
+      .input(z.object({ message: z.string() }))
+      .mutation(async ({ input }) => {
+        const handoff = aiService.detectHandoff(input.message);
+        return handoff;
       }),
   }),
 
   // ========================================================================
-  // KNOWLEDGE BASE
+  // KNOWLEDGE BASE (RAG)
   // ========================================================================
   knowledgeBase: router({
     search: protectedProcedure
@@ -116,40 +228,11 @@ export const aiRouter = router({
         })
       )
       .query(async ({ input }) => {
-        // This would search the knowledge base
-        // Placeholder implementation
+        // Placeholder for RAG search - will be implemented in Phase 7
         return {
           query: input.query,
           results: [],
           count: 0,
-        };
-      }),
-
-    upload: adminProcedure
-      .input(
-        z.object({
-          fileName: z.string(),
-          fileType: z.enum(["pdf", "docx", "txt", "csv"]),
-          fileUrl: z.string(),
-          content: z.string().optional(),
-        })
-      )
-      .mutation(async ({ input, ctx }) => {
-        // This would upload a document to the knowledge base
-        // Placeholder implementation
-        await createAuditLog(
-          ctx.user?.id,
-          "create",
-          "knowledge_base",
-          undefined,
-          { fileName: input.fileName }
-        );
-
-        return {
-          id: Math.floor(Math.random() * 10000),
-          fileName: input.fileName,
-          fileType: input.fileType,
-          fileUrl: input.fileUrl,
         };
       }),
   }),

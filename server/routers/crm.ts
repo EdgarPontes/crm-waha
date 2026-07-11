@@ -24,6 +24,10 @@ import {
   createContact,
   updateContact,
   deleteContact,
+  updateLeadTags,
+  updateLeadAssignee,
+  updateLeadDueDate,
+  listUsers,
 } from "../db";
 
 export const crmRouter = router({
@@ -176,8 +180,83 @@ export const crmRouter = router({
         stageId: z.number(),
       })
     )
-    .mutation(async ({ input }) => {
-      return moveLeadToStage(input.leadId, input.stageId);
+    .mutation(async ({ input, ctx }) => {
+      const result = await moveLeadToStage(input.leadId, input.stageId);
+
+      // Audit log
+      await createAuditLog(
+        ctx.user?.id,
+        "move_kanban",
+        "lead",
+        input.leadId,
+        { fromStageId: "unknown", toStageId: input.stageId }
+      );
+
+      return result;
+    }),
+
+  // Lead updates
+  updateLeadTags: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        tags: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const result = await updateLeadTags(input.leadId, input.tags);
+
+      await createAuditLog(
+        ctx.user?.id,
+        "update",
+        "lead",
+        input.leadId,
+        { tags: input.tags }
+      );
+
+      return result;
+    }),
+
+  updateLeadAssignee: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        assignedToUserId: z.number().nullable(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const result = await updateLeadAssignee(input.leadId, input.assignedToUserId);
+
+      await createAuditLog(
+        ctx.user?.id,
+        "update",
+        "lead",
+        input.leadId,
+        { assignedToUserId: input.assignedToUserId }
+      );
+
+      return result;
+    }),
+
+  updateLeadDueDate: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        dueDate: z.date().nullable(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const result = await updateLeadDueDate(input.leadId, input.dueDate);
+
+      await createAuditLog(
+        ctx.user?.id,
+        "update",
+        "lead",
+        input.leadId,
+        { dueDate: input.dueDate }
+      );
+
+      return result;
     }),
 
   // Default pipeline
@@ -230,4 +309,9 @@ export const crmRouter = router({
     .mutation(async ({ input }) => {
       return deleteContact(input.id);
     }),
+
+  // Users
+  listUsers: protectedProcedure.query(async () => {
+    return listUsers();
+  }),
 });

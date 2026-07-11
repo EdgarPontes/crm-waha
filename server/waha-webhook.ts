@@ -12,7 +12,14 @@ import {
   updateConversationUnreadCount,
   updateConversationLastMessageAt,
   createAuditLog,
+  listMessagesByConversation,
+  getActiveAIConfiguration,
+  getLeadById,
+  getDefaultPipeline,
+  getStagesByPipeline,
 } from "./db";
+import { aiService, type ChatMessage, type AIConfig } from "./services/ai";
+import { getWAHAClient } from "./waha-client";
 
 interface WahaWebhookEvent {
   event: string;
@@ -225,6 +232,138 @@ async function handleIncomingMessage(
     from: phoneNumber,
     type: messageType,
   });
+
+  // Process AI response if conversation is active and AI is configured
+  await processAIResponse(sessionName, conversation.id, contact.id, messageBody, phoneNumber);
+}
+
+async function processAIResponse(
+  sessionName: string,
+  conversationId: number,
+  contactId: number,
+  userMessage: string,
+  phoneNumber: string
+) {
+  try {
+    // Check if conversation is active and not waiting for human
+    const conversation = await getOrCreateConversation(contactId);
+    if (!conversation || conversation.status !== "active") {
+      return;
+    }
+
+    // Check if AI is active
+    const aiConfig = await getActiveAIConfiguration();
+    if (!aiConfig || !aiConfig.isActive) {
+      return;
+    }
+
+    // Check if this is a handoff request
+    if (detectHandoffRequest(userMessage)) {
+      await handleHandoffRequest(conversationId);
+      return;
+    }
+
+    // Get conversation history for context
+    const messages = await listMessagesByConversation(conversationId, 10, 0);
+    const chatHistory: ChatMessage[] = messages
+      .reverse()
+      .map((msg) => ({
+        role: msg.senderId ? "assistant" : "user",
+        content: msg.content || "",
+      }));
+
+    // Add current user message
+    chatHistory.push({ role: "user", content: userMessage });
+
+    // Get lead context if exists
+    let systemPrompt = aiConfig.systemPrompt || "Você é um atendente de vendas profissional e útil.";
+    
+    if (conversation.leadId) {
+      const lead = await getLeadById(conversation.leadId);
+      if (lead) {
+        const pipeline = await getDefaultPipeline();
+        if (pipeline) {
+          const stages = await getStagesByPipeline(pipeline.id);
+          const currentStage = stages.find(s => s.id === lead.stageId);
+          systemPrompt += `\n\nContexto do Lead:`;
+          systemPrompt += `\n- Estágio atual: ${currentStage?.name || "Desconhecido"}`;
+          systemPrompt += `\n- Tags: ${lead.tags?.join(", ") || "Nenhuma"}`;
+          systemPrompt += `\n- Observações: ${lead.notes || "Nenhuma"}`;
+        }
+      }
+    }
+
+    // Generate AI response
+    const aiResponse = await aiService.generateResponse(
+      {
+        provider: aiConfig.provider as any,
+        apiKey: aiConfig.apiKey,
+        model: aiConfig.model,
+        systemPrompt,
+        temperature: Number(aiConfig.temperature) || 0.7,
+        maxTokens: aiConfig.maxTokens || 2000,
+      },
+      chatHistory
+    );
+
+    if (!aiResponse) {
+      return;
+    }
+
+    // Send response via WAHA
+    const wahaClient = getWAHAClient(sessionName);
+    await wahaClient.sendMessage(phoneNumber, aiResponse);
+
+    // Save AI response to database
+    await createMessage(
+      conversationId,
+      "text",
+      aiResponse,
+      undefined,
+      undefined, // senderId (AI)
+      undefined,
+      undefined, // waMessageId (not from WAHA)
+      { aiGenerated: true }
+    );
+
+    await createAuditLog(undefined, "send_message", "message", undefined, {
+      sessionName,
+      to: phoneNumber,
+      type: "text",
+      aiGenerated: true,
+    });
+
+  } catch (error) {
+    console.error("[WAHA Webhook] Error processing AI response:", error);
+  }
+}
+
+function detectHandoffRequest(message: string): boolean {
+  const handoffKeywords = [
+    "humano", "atendente", "pessoa real", "falar com alguém",
+    "reclamação", "reclamar", "insatisfeito", "problema grave",
+    "urgente", "emergência", "supervisor", "gerente",
+    "cancelar", "não quero mais", "desistir",
+  ];
+  
+  const lowerMessage = message.toLowerCase();
+  return handoffKeywords.some((keyword) => lowerMessage.includes(keyword));
+}
+
+async function handleHandoffRequest(conversationId: number) {
+  try {
+    // Update conversation status to waiting_human
+    await createAuditLog(undefined, "update", "conversation", conversationId, {
+      field: "status",
+      value: "waiting_human",
+      reason: "handoff_requested_by_client",
+    });
+
+    // Could send a message saying "Transferindo para atendente humano..."
+    // This would be implemented based on your needs
+  } catch (error) {
+    console.error("[WAHA Webhook] Error handling handoff request:", error);
+  }
 }
 
 async function handleMessageAck(

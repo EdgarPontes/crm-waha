@@ -202,6 +202,7 @@ export const leads = pgTable(
     assignedToUserId: integer("assignedToUserId"),
     tags: jsonb("tags").$type<string[]>().default([]),
     notes: text("notes"),
+    dueDate: timestamp("dueDate"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
     closedAt: timestamp("closedAt"),
@@ -212,6 +213,7 @@ export const leads = pgTable(
     assignedToUserIdIdx: index("assignedToUserId_idx").on(
       table.assignedToUserId
     ),
+    dueDateIdx: index("dueDate_idx").on(table.dueDate),
   })
 );
 

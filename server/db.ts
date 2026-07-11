@@ -566,6 +566,36 @@ export async function addTagToLead(leadId: number, tagName: string) {
     .where(eq(leads.id, leadId));
 }
 
+export async function updateLeadTags(leadId: number, tags: string[]) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(leads)
+    .set({ tags, updatedAt: new Date() })
+    .where(eq(leads.id, leadId));
+}
+
+export async function updateLeadAssignee(leadId: number, assignedToUserId: number | null) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(leads)
+    .set({ assignedToUserId, updatedAt: new Date() })
+    .where(eq(leads.id, leadId));
+}
+
+export async function updateLeadDueDate(leadId: number, dueDate: Date | null) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(leads)
+    .set({ dueDate, updatedAt: new Date() })
+    .where(eq(leads.id, leadId));
+}
+
 // ============================================================================
 // CONVERSATION OPERATIONS
 // ============================================================================
@@ -1351,6 +1381,9 @@ export async function updateLead(
     email?: string;
     notes?: string;
     metadata?: Record<string, unknown>;
+    dueDate?: Date | null;
+    tags?: string[];
+    assignedToUserId?: number | null;
   }
 ) {
   const db = await getDb();
@@ -1362,6 +1395,9 @@ export async function updateLead(
   if (data.email !== undefined) updateData.email = data.email;
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.metadata !== undefined) updateData.metadata = data.metadata;
+  if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
+  if (data.tags !== undefined) updateData.tags = data.tags;
+  if (data.assignedToUserId !== undefined) updateData.assignedToUserId = data.assignedToUserId;
   updateData.updatedAt = new Date();
 
   return await db.update(leads).set(updateData).where(eq(leads.id, id));

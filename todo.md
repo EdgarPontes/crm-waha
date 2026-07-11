@@ -80,37 +80,37 @@
 
 ## Fase 5: Kanban de Vendas
 
-- [ ] Criar schema de Pipelines e Stages
-- [ ] Implementar colunas padrão do Kanban (8 colunas)
-- [ ] Criar componente visual do Kanban
-- [ ] Implementar drag-and-drop entre colunas
-- [ ] Implementar atualização de stageId ao mover lead
-- [ ] Implementar atualização em tempo real do Kanban
-- [ ] Implementar filtros no Kanban
-- [ ] Implementar busca de leads no Kanban
-- [ ] Adicionar etiquetas aos cards do Kanban
-- [ ] Adicionar responsável aos cards do Kanban
-- [ ] Adicionar datas de vencimento aos cards
-- [ ] Implementar visualização de lead ao clicar no card
-- [ ] Registrar movimentações em AuditLogs
+- [x] Criar schema de Pipelines e Stages
+- [x] Implementar colunas padrão do Kanban (8 colunas)
+- [x] Criar componente visual do Kanban
+- [x] Implementar drag-and-drop entre colunas
+- [x] Implementar atualização de stageId ao mover lead
+- [x] Implementar atualização em tempo real do Kanban
+- [x] Implementar filtros no Kanban
+- [x] Implementar busca de leads no Kanban
+- [x] Adicionar etiquetas aos cards do Kanban
+- [x] Adicionar responsável aos cards do Kanban
+- [x] Adicionar datas de vencimento aos cards
+- [x] Implementar visualização de lead ao clicar no card
+- [x] Registrar movimentações em AuditLogs
 - [ ] Criar testes para Kanban
 
 ## Fase 6: IA Conversacional
 
-- [ ] Criar schema para AIConfigurations
-- [ ] Implementar painel de configuração de IA
-- [ ] Implementar suporte para OpenAI
-- [ ] Implementar suporte para Claude
-- [ ] Implementar suporte para Gemini
-- [ ] Implementar suporte para Ollama
-- [ ] Implementar suporte para OpenRouter
-- [ ] Implementar criptografia de API keys
-- [ ] Implementar teste de conexão com IA
-- [ ] Implementar fluxo de recebimento de mensagem → IA
-- [ ] Implementar recuperação de histórico para contexto
-- [ ] Implementar busca de contexto do cliente
-- [ ] Implementar envio de resposta via WAHA
-- [ ] Implementar detecção de handoff (cliente pediu humano, reclamação, etc)
+- [x] Criar schema para AIConfigurations
+- [x] Implementar painel de configuração de IA
+- [x] Implementar suporte para OpenAI
+- [x] Implementar suporte para Claude
+- [x] Implementar suporte para Gemini
+- [x] Implementar suporte para Ollama
+- [x] Implementar suporte para OpenRouter
+- [x] Implementar criptografia de API keys
+- [x] Implementar teste de conexão com IA
+- [x] Implementar fluxo de recebimento de mensagem → IA
+- [x] Implementar recuperação de histórico para contexto
+- [x] Implementar busca de contexto do cliente
+- [x] Implementar envio de resposta via WAHA
+- [x] Implementar detecção de handoff (cliente pediu humano, reclamação, etc)
 - [ ] Criar testes para IA
 
 ## Fase 7: Base de Conhecimento (RAG)
