@@ -65,18 +65,18 @@
 
 ## Fase 4: Tela de Conversação
 
-- [ ] Criar layout base da tela de conversação (painel esquerdo + central)
-- [ ] Implementar lista de conversas no painel esquerdo
-- [ ] Exibir última mensagem, horário e contador de não lidas
-- [ ] Exibir status IA/Humano na lista de conversas
-- [ ] Implementar histórico de mensagens no painel central
-- [ ] Exibir mídias (imagens, áudios, vídeos, documentos)
-- [ ] Implementar suporte a emojis
-- [ ] Implementar atualização em tempo real via WebSocket
-- [ ] Implementar scroll infinito para histórico
-- [ ] Criar componentes de mensagem (enviada, recebida, status)
-- [ ] Implementar indicador de digitação
-- [ ] Criar testes para tela de conversação
+- [x] Criar layout base da tela de conversação (painel esquerdo + central)
+- [x] Implementar lista de conversas no painel esquerdo
+- [x] Exibir última mensagem, horário e contador de não lidas
+- [x] Exibir status IA/Humano na lista de conversas
+- [x] Implementar histórico de mensagens no painel central
+- [x] Exibir mídias (imagens, áudios, vídeos, documentos)
+- [x] Implementar suporte a emojis
+- [x] Implementar atualização em tempo real via WebSocket
+- [x] Implementar scroll infinito para histórico
+- [x] Criar componentes de mensagem (enviada, recebida, status)
+- [x] Implementar indicador de digitação
+- [x] Criar testes para tela de conversação
 
 ## Fase 5: Kanban de Vendas
 
