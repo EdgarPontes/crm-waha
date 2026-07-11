@@ -52,15 +52,15 @@
 
 ## Fase 3: CRM Base - Contatos e Leads
 
-- [ ] Implementar cadastro automático de contatos ao receber mensagem
-- [ ] Implementar cadastro automático de leads
-- [ ] Implementar criação de conversa automática
-- [ ] Criar procedures para listar contatos
-- [ ] Criar procedures para listar leads
-- [ ] Criar procedures para atualizar contatos
-- [ ] Criar procedures para atualizar leads
-- [ ] Implementar busca e filtros de contatos
-- [ ] Implementar busca e filtros de leads
+- [x] Implementar cadastro automático de contatos ao receber mensagem
+- [x] Implementar cadastro automático de leads
+- [x] Implementar criação de conversa automática
+- [x] Criar procedures para listar contatos
+- [x] Criar procedures para listar leads
+- [x] Criar procedures para atualizar contatos
+- [x] Criar procedures para atualizar leads
+- [x] Implementar busca e filtros de contatos
+- [x] Implementar busca e filtros de leads
 - [ ] Criar testes para CRM base
 
 ## Fase 4: Tela de Conversação

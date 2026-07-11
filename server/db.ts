@@ -405,6 +405,58 @@ export async function listContacts(limit = 50, offset = 0) {
     .offset(offset);
 }
 
+export async function createContact(data: {
+  name: string;
+  whatsappNumber: string;
+  email?: string;
+  phone?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  await db.insert(contacts).values({
+    whatsappNumber: data.whatsappNumber,
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    lastInteractionAt: new Date(),
+  });
+
+  const created = await db
+    .select()
+    .from(contacts)
+    .where(eq(contacts.whatsappNumber, data.whatsappNumber))
+    .limit(1);
+
+  return created.length > 0 ? created[0] : null;
+}
+
+export async function updateContact(
+  contactId: number,
+  data: { name?: string; whatsappNumber?: string; email?: string; phone?: string }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.whatsappNumber !== undefined) updateData.whatsappNumber = data.whatsappNumber;
+  if (data.email !== undefined) updateData.email = data.email;
+  if (data.phone !== undefined) updateData.phone = data.phone;
+
+  return await db
+    .update(contacts)
+    .set(updateData)
+    .where(eq(contacts.id, contactId));
+}
+
+export async function deleteContact(contactId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db.delete(contacts).where(eq(contacts.id, contactId));
+}
+
 export async function updateContactLastInteraction(contactId: number) {
   const db = await getDb();
   if (!db) return null;

@@ -14,6 +14,7 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import Automations from "./pages/Automations";
 import TeamManagement from "./pages/TeamManagement";
 import WhatsAppSessions from "./pages/WhatsAppSessions";
+import Contacts from "./pages/Contacts";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { useAuth } from "./_core/hooks/useAuth";
@@ -157,6 +158,14 @@ function Router() {
         component={() => (
           <ProtectedRoute>
             <WhatsAppSessions />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/contacts"
+        component={() => (
+          <ProtectedRoute>
+            <Contacts />
           </ProtectedRoute>
         )}
       />

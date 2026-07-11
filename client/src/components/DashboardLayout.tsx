@@ -30,6 +30,7 @@ import {
   BookOpen,
   Zap,
   Smartphone,
+  UserPlus,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -38,6 +39,7 @@ import { Button } from "./ui/button";
 
 const menuItems = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { label: "Contatos", path: "/contacts", icon: UserPlus },
   { label: "Kanban", path: "/kanban", icon: Zap },
   { label: "Conversas", path: "/conversations", icon: MessageSquare },
   { label: "Configurações IA", path: "/ai-settings", icon: Bot },

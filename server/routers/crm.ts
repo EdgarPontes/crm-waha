@@ -20,6 +20,10 @@ import {
   getOrCreateContact,
   getContactById,
   updateContactLastInteraction,
+  listContacts,
+  createContact,
+  updateContact,
+  deleteContact,
 } from "../db";
 
 export const crmRouter = router({
@@ -180,4 +184,50 @@ export const crmRouter = router({
   getDefaultPipeline: protectedProcedure.query(async () => {
     return getDefaultPipeline();
   }),
+
+  // Contacts
+  listContacts: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      return listContacts(input.limit || 50, input.offset || 0);
+    }),
+
+  createContact: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        whatsappNumber: z.string().min(1),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return createContact(input);
+    }),
+
+  updateContact: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        whatsappNumber: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      return updateContact(id, data);
+    }),
+
+  deleteContact: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      return deleteContact(input.id);
+    }),
 });
