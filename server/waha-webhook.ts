@@ -20,6 +20,7 @@ import {
 } from "./db";
 import { aiService, type ChatMessage, type AIConfig } from "./services/ai";
 import { getWAHAClient } from "./waha-client";
+import { checkAndExecuteAutomations } from "./services/automation";
 
 interface WahaWebhookEvent {
   event: string;
@@ -231,6 +232,16 @@ async function handleIncomingMessage(
     sessionName,
     from: phoneNumber,
     type: messageType,
+  });
+
+  // Check and execute automations based on the message
+  await checkAndExecuteAutomations({
+    conversationId: conversation.id,
+    sessionName,
+    from: data.from,
+    phoneNumber,
+    userMessage: messageBody,
+    contactId: contact.id,
   });
 
   // Process AI response if conversation is active and AI is configured
