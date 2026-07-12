@@ -16,16 +16,70 @@ import {
   updateContactLastInteraction,
 } from "../db";
 
+// Mapa entre status do WAHA e status do banco
+const WAHA_STATUS_MAP: Record<string, "disconnected" | "connecting" | "connected" | "error"> = {
+  CONNECTED: "connected",
+  DISCONNECTED: "disconnected",
+  STARTING: "connecting",
+  STOPPING: "disconnected",
+  QR_REQUIRED: "connecting",
+  FAILED: "error",
+};
+
 export const wahaRouter = router({
-  // Listar todas as sessões
+  // Listar todas as sessões (sincroniza WAHA <-> banco de dados)
   listSessions: protectedProcedure.query(async () => {
     try {
       const wahaClient = getWAHAClient();
-      const sessions = await wahaClient.listSessions();
-      return sessions;
+      const db = await getDb();
+
+      // Busca sessões diretamente da API WAHA
+      let wahaSessions: any[] = [];
+      try {
+        wahaSessions = await wahaClient.listSessions();
+      } catch (err) {
+        console.error("[Router] WAHA indisponível ao listar sessões:", err);
+      }
+
+      // Busca sessões registradas no banco de dados
+      let dbSessions: any[] = [];
+      if (db) {
+        dbSessions = await db.select().from(whatsappSessions);
+      }
+
+      // Mescla: para cada sessão do banco, atualiza status com base na WAHA
+      if (db && wahaSessions.length > 0) {
+        for (const ws of wahaSessions) {
+          const mappedStatus = WAHA_STATUS_MAP[ws?.status] || "connecting";
+          const phoneNumber = ws?.me?.id || "";
+          // Atualiza o banco se houver mudança de status ou telefone
+          await db
+            .update(whatsappSessions)
+            .set({
+              status: mappedStatus,
+              phoneNumber: phoneNumber || undefined,
+              updatedAt: new Date(),
+            })
+            .where(eq(whatsappSessions.sessionName, ws?.name || ws?.sessionName))
+            .catch(err =>
+              console.error("[Router] Falha ao atualizar sessão no banco:", err)
+            );
+        }
+      }
+
+      // Retorna lista unificada: sessões do banco prevalecem, complementadas pelas da WAHA
+      const dbNames = new Set(dbSessions.map((s: any) => s.sessionName));
+      const extraWaha = wahaSessions.filter(
+        (ws: any) => !dbNames.has(ws?.name || ws?.sessionName)
+      );
+
+      return {
+        dbSessions,
+        wahaSessions: extraWaha,
+      };
     } catch (error) {
       console.error("[Router] Erro ao listar sessões:", error);
-      return [];
+      return { dbSessions: [], wahaSessions: [] };
     }
   }),
 
@@ -48,17 +102,27 @@ export const wahaRouter = router({
     .input(z.object({ sessionName: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
+        // 1. Chama a API WAHA para criar a sessão
         const wahaClient = getWAHAClient();
         const session = await wahaClient.createSession(input.sessionName);
 
-        // Salvar no banco de dados
+        // 2. Salva no banco de dados (upsert para evitar duplicação)
         const db = await getDb();
         if (db) {
-          await db.insert(whatsappSessions).values({
-            sessionName: input.sessionName,
-            phoneNumber: "",
-            status: "connecting",
-          });
+          await db
+            .insert(whatsappSessions)
+            .values({
+              sessionName: input.sessionName,
+              phoneNumber: "",
+              status: "connecting",
+            })
+            .onConflictDoUpdate({
+              target: whatsappSessions.sessionName,
+              set: {
+                status: "connecting",
+                updatedAt: new Date(),
+              },
+            });
         }
 
         return session;

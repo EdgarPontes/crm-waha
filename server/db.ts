@@ -22,6 +22,7 @@ import {
   knowledgeBaseDocuments,
   auditLogs,
   attendanceQueue,
+  wahaConfigurations,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import bcrypt from "bcryptjs";
@@ -1878,4 +1879,150 @@ export async function listAuditLogs(
     .orderBy(desc(auditLogs.createdAt))
     .limit(limit)
     .offset(offset);
+}
+
+// ============================================================================
+// WAHA CONFIGURATION OPERATIONS
+// ============================================================================
+
+export async function getActiveWAHAConfiguration() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(wahaConfigurations)
+    .where(eq(wahaConfigurations.isActive, true))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getWAHAConfigurationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(wahaConfigurations)
+    .where(eq(wahaConfigurations.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function getWAHAConfigurationByName(name: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(wahaConfigurations)
+    .where(eq(wahaConfigurations.name, name))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function listWAHAConfigurations() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(wahaConfigurations);
+}
+
+export async function createWAHAConfiguration(data: {
+  name: string;
+  baseUrl: string;
+  apiKey?: string;
+  isActive?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // If activating, deactivate all others
+  if (data.isActive) {
+    await db
+      .update(wahaConfigurations)
+      .set({ isActive: false })
+      .where(eq(wahaConfigurations.isActive, true));
+  }
+
+  await db.insert(wahaConfigurations).values({
+    name: data.name,
+    baseUrl: data.baseUrl,
+    apiKey: data.apiKey || null,
+    isActive: data.isActive ?? true,
+  });
+
+  const created = await db
+    .select()
+    .from(wahaConfigurations)
+    .where(eq(wahaConfigurations.name, data.name))
+    .limit(1);
+
+  return created.length > 0 ? created[0] : null;
+}
+
+export async function updateWAHAConfiguration(
+  id: number,
+  data: {
+    name?: string;
+    baseUrl?: string;
+    apiKey?: string;
+    isActive?: boolean;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // If activating, deactivate all others
+  if (data.isActive) {
+    await db
+      .update(wahaConfigurations)
+      .set({ isActive: false })
+      .where(eq(wahaConfigurations.isActive, true));
+  }
+
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.baseUrl !== undefined) updateData.baseUrl = data.baseUrl;
+  if (data.apiKey !== undefined) updateData.apiKey = data.apiKey;
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  return await db
+    .update(wahaConfigurations)
+    .set(updateData)
+    .where(eq(wahaConfigurations.id, id));
+}
+
+export async function deleteWAHAConfiguration(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .delete(wahaConfigurations)
+    .where(eq(wahaConfigurations.id, id));
+}
+
+export async function testWAHAConnection(baseUrl: string, apiKey?: string) {
+  try {
+    const response = await fetch(`${baseUrl}/api/sessions`, {
+      headers: apiKey ? { "X-Api-Key": apiKey } : {},
+      timeout: 5000,
+    });
+    return {
+      success: response.ok,
+      status: response.status,
+      message: response.ok
+        ? "Conexão bem-sucedida"
+        : `Erro: ${response.status} ${response.statusText}`,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      status: 0,
+      message: `Erro de conexão: ${error.message || "Não foi possível conectar"}`,
+    };
+  }
 }

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { getDb } from "./db";
-import { messages, conversations, contacts } from "../drizzle/schema";
+import { messages, conversations, contacts, whatsappSessions } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 export const webhookRouter = Router();
@@ -214,22 +214,22 @@ async function handleSessionStatusEvent(
       `[Webhook] Status da sessão ${sessionName} atualizado para ${status}`
     );
 
-    // Aqui você pode atualizar a tabela whatsappSessions se necessário
-    // Exemplo de como fazer (descomente quando implementar):
-    // const statusMap = {
-    //   'CONNECTED': 'connected',
-    //   'DISCONNECTED': 'disconnected',
-    //   'STARTING': 'connecting',
-    //   'STOPPING': 'disconnected',
-    // };
-    // await db
-    //   .update(whatsappSessions)
-    //   .set({
-    //     status: statusMap[status] || status.toLowerCase(),
-    //     phoneNumber: me?.id || "",
-    //     updatedAt: new Date(),
-    //   })
-    //   .where(eq(whatsappSessions.sessionName as any, sessionName));
+    // Atualiza a tabela whatsappSessions com o novo status
+    const statusMap: Record<string, string> = {
+      CONNECTED: "connected",
+      DISCONNECTED: "disconnected",
+      STARTING: "connecting",
+      STOPPING: "disconnected",
+    };
+
+    await db
+      .update(whatsappSessions)
+      .set({
+        status: statusMap[status] || "connecting",
+        phoneNumber: me?.id || "",
+        updatedAt: new Date(),
+      })
+      .where(eq(whatsappSessions.sessionName, sessionName));
   } catch (error) {
     console.error("[Webhook] Erro ao atualizar status da sessão:", error);
   }

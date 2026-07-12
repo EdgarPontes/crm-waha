@@ -13,6 +13,7 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import Automations from "./pages/Automations";
 import TeamManagement from "./pages/TeamManagement";
 import WhatsAppSessions from "./pages/WhatsAppSessions";
+import WAHAConfigurations from "./pages/WAHAConfigurations";
 import Contacts from "./pages/Contacts";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -157,6 +158,14 @@ function Router() {
         component={() => (
           <ProtectedRoute>
             <WhatsAppSessions />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/waha-configurations"
+        component={() => (
+          <ProtectedRoute>
+            <WAHAConfigurations />
           </ProtectedRoute>
         )}
       />

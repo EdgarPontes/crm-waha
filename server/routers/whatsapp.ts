@@ -1,10 +1,15 @@
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { router, protectedProcedure, adminProcedure } from "../_core/trpc";
+import { getWAHAClient } from "../waha-client";
+import { getDb } from "../db";
+import { whatsappSessions } from "../../drizzle/schema";
 import {
   createWhatsAppSession,
   getWhatsAppSessionByName,
   listWhatsAppSessions,
   updateWhatsAppSessionStatus,
+  updateWhatsAppSessionByName,
   createAuditLog,
 } from "../db";
 
@@ -23,7 +28,29 @@ export const whatsappRouter = router({
     create: adminProcedure
       .input(z.object({ sessionName: z.string() }))
       .mutation(async ({ input, ctx }) => {
-        const session = await createWhatsAppSession(input.sessionName);
+        // 1. Cria a sessão na API WAHA
+        const wahaClient = getWAHAClient();
+        await wahaClient.createSession(input.sessionName);
+
+        // 2. Registra/upsert no banco de dados
+        const db = await getDb();
+        if (db) {
+          await db
+            .insert(whatsappSessions)
+            .values({
+              sessionName: input.sessionName,
+              status: "connecting",
+            })
+            .onConflictDoUpdate({
+              target: whatsappSessions.sessionName,
+              set: {
+                status: "connecting",
+                updatedAt: new Date(),
+              },
+            });
+        }
+
+        const session = await getWhatsAppSessionByName(input.sessionName);
 
         await createAuditLog(ctx.user?.id, "create", "session", session?.id, {
           sessionName: input.sessionName,
@@ -62,35 +89,49 @@ export const whatsappRouter = router({
         return result;
       }),
 
+    // Obter QR Code chamando a API WAHA
     getQR: protectedProcedure
-      .input(z.object({ sessionId: z.number() }))
+      .input(z.object({ sessionName: z.string() }))
       .query(async ({ input }) => {
-        // This would typically call WAHA API to get QR code
-        // For now, returning a placeholder
+        const wahaClient = getWAHAClient();
+        const qrCode = await wahaClient.getQRCode(input.sessionName);
+
+        // Atualiza o QR Code no banco
+        await updateWhatsAppSessionByName(input.sessionName, {
+          status: "connecting",
+          qrCode,
+        });
+
         return {
-          sessionId: input.sessionId,
-          qrCode: null,
+          sessionName: input.sessionName,
+          qrCode,
           status: "connecting",
         };
       }),
 
     disconnect: adminProcedure
-      .input(z.object({ sessionId: z.number() }))
+      .input(z.object({ sessionName: z.string() }))
       .mutation(async ({ input, ctx }) => {
-        const result = await updateWhatsAppSessionStatus(
-          input.sessionId,
-          "disconnected"
-        );
+        // 1. Desconecta na API WAHA
+        const wahaClient = getWAHAClient();
+        await wahaClient.disconnectSession(input.sessionName);
+
+        // 2. Atualiza o status no banco
+        await updateWhatsAppSessionByName(input.sessionName, {
+          status: "disconnected",
+        });
+
+        const session = await getWhatsAppSessionByName(input.sessionName);
 
         await createAuditLog(
           ctx.user?.id,
           "update",
           "session",
-          input.sessionId,
+          session?.id,
           { action: "disconnect" }
         );
 
-        return result;
+        return session;
       }),
   }),
 
@@ -107,11 +148,19 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        // This would call WAHA API to send message
-        // Placeholder implementation
+        const wahaClient = getWAHAClient();
+        const chatId = input.phoneNumber.includes("@")
+          ? input.phoneNumber
+          : `${input.phoneNumber}@c.us`;
+        const result = await wahaClient.sendMessage(
+          input.sessionName,
+          chatId,
+          input.text
+        );
+
         return {
           success: true,
-          messageId: `msg_${Date.now()}`,
+          messageId: result?.messageId || result?.id || `msg_${Date.now()}`,
           sessionName: input.sessionName,
           phoneNumber: input.phoneNumber,
           text: input.text,
@@ -129,11 +178,21 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        // This would call WAHA API to send media
-        // Placeholder implementation
+        const wahaClient = getWAHAClient();
+        const chatId = input.phoneNumber.includes("@")
+          ? input.phoneNumber
+          : `${input.phoneNumber}@c.us`;
+        const result = await wahaClient.sendMediaMessage(
+          input.sessionName,
+          chatId,
+          input.mediaUrl,
+          input.mediaType,
+          input.caption
+        );
+
         return {
           success: true,
-          messageId: `msg_${Date.now()}`,
+          messageId: result?.messageId || result?.id || `msg_${Date.now()}`,
           sessionName: input.sessionName,
           phoneNumber: input.phoneNumber,
           mediaType: input.mediaType,
@@ -151,11 +210,21 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        // This would call WAHA API to send location
-        // Placeholder implementation
+        const wahaClient = getWAHAClient();
+        const chatId = input.phoneNumber.includes("@")
+          ? input.phoneNumber
+          : `${input.phoneNumber}@c.us`;
+        const result = await wahaClient.sendLocationMessage(
+          input.sessionName,
+          chatId,
+          input.latitude,
+          input.longitude,
+          input.name
+        );
+
         return {
           success: true,
-          messageId: `msg_${Date.now()}`,
+          messageId: result?.messageId || result?.id || `msg_${Date.now()}`,
           sessionName: input.sessionName,
           phoneNumber: input.phoneNumber,
           latitude: input.latitude,

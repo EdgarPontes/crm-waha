@@ -325,6 +325,22 @@ export type AIConfiguration = typeof aiConfigurations.$inferSelect;
 export type InsertAIConfiguration = typeof aiConfigurations.$inferInsert;
 
 // ============================================================================
+// WAHA CONFIGURATIONS
+// ============================================================================
+export const wahaConfigurations = pgTable("wahaConfigurations", {
+  id: integer().generatedAlwaysAsIdentity().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  baseUrl: text("baseUrl").notNull(),
+  apiKey: text("apiKey"),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type WAHAConfiguration = typeof wahaConfigurations.$inferSelect;
+export type InsertWAHAConfiguration = typeof wahaConfigurations.$inferInsert;
+
+// ============================================================================
 // KNOWLEDGE BASE DOCUMENTS
 // ============================================================================
 export const knowledgeBaseDocuments = pgTable(

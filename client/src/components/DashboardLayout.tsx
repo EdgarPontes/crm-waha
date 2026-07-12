@@ -31,6 +31,7 @@ import {
   Zap,
   Smartphone,
   UserPlus,
+  Server,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -47,6 +48,7 @@ const menuItems = [
   { label: "Automações", path: "/automations", icon: Zap },
   { label: "Equipe", path: "/team-management", icon: Users },
   { label: "WhatsApp", path: "/whatsapp-sessions", icon: Smartphone },
+  { label: "Config. WAHA", path: "/waha-configurations", icon: Server },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

@@ -41,7 +41,7 @@ export class WAHAClient {
       baseURL: config.baseURL,
       timeout: config.timeout || 30000,
       headers: config.apiKey
-        ? { Authorization: `Bearer ${config.apiKey}` }
+        ? { "X-Api-Key": config.apiKey }
         : {},
     });
   }
@@ -51,7 +51,7 @@ export class WAHAClient {
    */
   async listSessions(): Promise<SessionInfo[]> {
     try {
-      const response = await this.client.get("/sessions");
+      const response = await this.client.get("/api/sessions");
       return response.data.sessions || [];
     } catch (error) {
       console.error("[WAHA] Erro ao listar sessões:", error);
@@ -64,7 +64,7 @@ export class WAHAClient {
    */
   async getSession(sessionName: string): Promise<SessionInfo> {
     try {
-      const response = await this.client.get(`/sessions/${sessionName}`);
+      const response = await this.client.get(`/api/sessions/${sessionName}`);
       return response.data;
     } catch (error) {
       console.error(`[WAHA] Erro ao obter sessão ${sessionName}:`, error);
@@ -77,7 +77,7 @@ export class WAHAClient {
    */
   async createSession(sessionName: string): Promise<SessionInfo> {
     try {
-      const response = await this.client.post("/sessions", {
+      const response = await this.client.post("/api/sessions", {
         sessionName,
       });
       return response.data;
@@ -92,7 +92,7 @@ export class WAHAClient {
    */
   async getQRCode(sessionName: string): Promise<string> {
     try {
-      const response = await this.client.get(`/sessions/${sessionName}/qr`);
+      const response = await this.client.get(`/api/sessions/${sessionName}/qr`);
       return response.data.qr;
     } catch (error) {
       console.error(`[WAHA] Erro ao obter QR Code para ${sessionName}:`, error);
@@ -105,7 +105,7 @@ export class WAHAClient {
    */
   async disconnectSession(sessionName: string): Promise<void> {
     try {
-      await this.client.post(`/sessions/${sessionName}/logout`);
+      await this.client.post(`/api/sessions/${sessionName}/logout`);
     } catch (error) {
       console.error(`[WAHA] Erro ao desconectar sessão ${sessionName}:`, error);
       throw error;
@@ -117,7 +117,7 @@ export class WAHAClient {
    */
   async deleteSession(sessionName: string): Promise<void> {
     try {
-      await this.client.delete(`/sessions/${sessionName}`);
+      await this.client.delete(`/api/sessions/${sessionName}`);
     } catch (error) {
       console.error(`[WAHA] Erro ao deletar sessão ${sessionName}:`, error);
       throw error;
@@ -134,7 +134,7 @@ export class WAHAClient {
   ): Promise<any> {
     try {
       const response = await this.client.post(
-        `/sessions/${sessionName}/messages`,
+        `/api/sessions/${sessionName}/messages`,
         {
           chatId,
           text,
@@ -159,7 +159,7 @@ export class WAHAClient {
   ): Promise<any> {
     try {
       const response = await this.client.post(
-        `/sessions/${sessionName}/messages`,
+        `/api/sessions/${sessionName}/messages`,
         {
           chatId,
           media: {
@@ -188,7 +188,7 @@ export class WAHAClient {
   ): Promise<any> {
     try {
       const response = await this.client.post(
-        `/sessions/${sessionName}/messages`,
+        `/api/sessions/${sessionName}/messages`,
         {
           chatId,
           location: {
@@ -210,7 +210,7 @@ export class WAHAClient {
    */
   async startSession(sessionName: string): Promise<SessionInfo> {
     try {
-      const response = await this.client.post("/sessions/start", {
+      const response = await this.client.post("/api/sessions/start", {
         sessionName,
       });
       return response.data;
@@ -225,7 +225,7 @@ export class WAHAClient {
    */
   async getSessionsStatus(): Promise<any> {
     try {
-      const response = await this.client.get("/sessions/status");
+      const response = await this.client.get("/api/sessions/status");
       return response.data;
     } catch (error) {
       console.error(`[WAHA] Erro ao obter status das sessões:`, error);
@@ -243,7 +243,7 @@ export class WAHAClient {
   ): Promise<any[]> {
     try {
       const response = await this.client.get(
-        `/sessions/${sessionName}/chats/${chatId}/messages`,
+        `/api/sessions/${sessionName}/chats/${chatId}/messages`,
         {
           params: { limit },
         }
@@ -261,7 +261,7 @@ export class WAHAClient {
   async markAsRead(sessionName: string, messageId: string): Promise<void> {
     try {
       await this.client.post(
-        `/sessions/${sessionName}/messages/${messageId}/read`
+        `/api/sessions/${sessionName}/messages/${messageId}/read`
       );
     } catch (error) {
       console.error(`[WAHA] Erro ao marcar mensagem como lida:`, error);
@@ -275,7 +275,7 @@ export class WAHAClient {
   async getContact(sessionName: string, contactId: string): Promise<any> {
     try {
       const response = await this.client.get(
-        `/sessions/${sessionName}/contacts/${contactId}`
+        `/api/sessions/${sessionName}/contacts/${contactId}`
       );
       return response.data;
     } catch (error) {
@@ -294,7 +294,7 @@ export class WAHAClient {
   ): Promise<any> {
     try {
       const response = await this.client.post(
-        `/sessions/${sessionName}/webhooks`,
+        `/api/sessions/${sessionName}/webhooks`,
         {
           url: webhookUrl,
           events,
@@ -313,7 +313,7 @@ export class WAHAClient {
   async removeWebhook(sessionName: string, webhookId: string): Promise<void> {
     try {
       await this.client.delete(
-        `/sessions/${sessionName}/webhooks/${webhookId}`
+        `/api/sessions/${sessionName}/webhooks/${webhookId}`
       );
     } catch (error) {
       console.error(`[WAHA] Erro ao remover webhook:`, error);
@@ -324,22 +324,66 @@ export class WAHAClient {
 
 // Exportar instância singleton
 let wahaClient: WAHAClient | null = null;
+let lastConfigHash: string | null = null;
 
-export function getWAHAClient(): WAHAClient {
-  if (!wahaClient) {
-    const baseURL = process.env.WAHA_API_URL || "http://localhost:3001";
-    const apiKey = process.env.WAHA_API_KEY;
+function getConfigHash(config: WAHAConfig): string {
+  return `${config.baseURL}-${config.apiKey || ""}-${config.timeout || 30000}`;
+}
 
-    wahaClient = new WAHAClient({
-      baseURL,
-      apiKey,
-      timeout: 30000,
-    });
+export async function getWAHAClient(): Promise<WAHAClient> {
+  try {
+    const { getActiveWAHAConfiguration } = await import("./db");
+    const activeConfig = await getActiveWAHAConfiguration();
+
+    if (activeConfig) {
+      const currentHash = getConfigHash({
+        baseURL: activeConfig.baseUrl,
+        apiKey: activeConfig.apiKey || undefined,
+      });
+
+      if (!wahaClient || lastConfigHash !== currentHash) {
+        wahaClient = new WAHAClient({
+          baseURL: activeConfig.baseUrl,
+          apiKey: activeConfig.apiKey || undefined,
+          timeout: 30000,
+        });
+        lastConfigHash = currentHash;
+        console.log("[WAHA] Cliente inicializado com configuração do banco:", activeConfig.baseUrl);
+      }
+    } else {
+      const fallbackBaseURL = process.env.WAHA_API_URL || "http://localhost:3001";
+      const fallbackApiKey = process.env.WAHA_API_KEY;
+
+      if (!wahaClient || lastConfigHash !== `${fallbackBaseURL}-${fallbackApiKey || ""}`) {
+        wahaClient = new WAHAClient({
+          baseURL: fallbackBaseURL,
+          apiKey: fallbackApiKey,
+          timeout: 30000,
+        });
+        lastConfigHash = `${fallbackBaseURL}-${fallbackApiKey || ""}`;
+        console.log("[WAHA] Cliente inicializado com fallback (ENV):", fallbackBaseURL);
+      }
+    }
+  } catch (error) {
+    console.error("[WAHA] Erro ao buscar configuração do banco, usando fallback:", error);
+    const fallbackBaseURL = process.env.WAHA_API_URL || "http://localhost:3001";
+    const fallbackApiKey = process.env.WAHA_API_KEY;
+
+    if (!wahaClient || lastConfigHash !== `${fallbackBaseURL}-${fallbackApiKey || ""}`) {
+      wahaClient = new WAHAClient({
+        baseURL: fallbackBaseURL,
+        apiKey: fallbackApiKey,
+        timeout: 30000,
+      });
+      lastConfigHash = `${fallbackBaseURL}-${fallbackApiKey || ""}`;
+    }
   }
+
   return wahaClient;
 }
 
 export function initializeWAHAClient(config: WAHAConfig): WAHAClient {
   wahaClient = new WAHAClient(config);
+  lastConfigHash = getConfigHash(config);
   return wahaClient;
 }
