@@ -59,6 +59,9 @@ export default function WhatsAppSessions() {
     }
   );
 
+  // Garante que sessions seja sempre um array
+  const sessionsData = sessions || [];
+
   const createMutation = trpc.whatsapp.sessions.create.useMutation({
     onSuccess: () => {
       setIsCreating(false);
@@ -210,7 +213,7 @@ export default function WhatsAppSessions() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {sessions.map((session: WhatsAppSession) => (
+            {sessionsData.map((session: WhatsAppSession) => (
               <Card
                 key={session.id}
                 className="transition-all hover:shadow-md"
@@ -287,13 +290,13 @@ export default function WhatsAppSessions() {
         )}
 
         {/* Statistics */}
-        {sessions.length > 0 && (
+        {sessionsData.length > 0 && (
           <div className="grid grid-cols-3 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-green-600">
-                    {sessions.filter((s: WhatsAppSession) => s.status === "connected").length}
+                    {sessionsData.filter((s: WhatsAppSession) => s.status === "connected").length}
                   </p>
                   <p className="text-sm text-muted-foreground">Conectadas</p>
                 </div>
@@ -303,7 +306,7 @@ export default function WhatsAppSessions() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-yellow-600">
-                    {sessions.filter((s: WhatsAppSession) => s.status === "connecting").length}
+                    {sessionsData.filter((s: WhatsAppSession) => s.status === "connecting").length}
                   </p>
                   <p className="text-sm text-muted-foreground">Conectando</p>
                 </div>
@@ -313,7 +316,7 @@ export default function WhatsAppSessions() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-red-600">
-                    {sessions.filter((s: WhatsAppSession) => s.status === "disconnected").length}
+                    {sessionsData.filter((s: WhatsAppSession) => s.status === "disconnected").length}
                   </p>
                   <p className="text-sm text-muted-foreground">Desconectadas</p>
                 </div>

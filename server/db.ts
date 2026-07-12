@@ -1961,7 +1961,14 @@ export async function createWAHAConfiguration(data: {
     .where(eq(wahaConfigurations.name, data.name))
     .limit(1);
 
-  return created.length > 0 ? created[0] : null;
+  const config = created.length > 0 ? created[0] : null;
+
+  // Se a configuração foi criada como ativa, sincroniza sessões do WAHA
+  if (config?.isActive) {
+    await syncSessionsFromWAHA(config.baseUrl, config.apiKey || undefined);
+  }
+
+  return config;
 }
 
 export async function updateWAHAConfiguration(
@@ -1990,10 +1997,26 @@ export async function updateWAHAConfiguration(
   if (data.apiKey !== undefined) updateData.apiKey = data.apiKey;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
-  return await db
+  await db
     .update(wahaConfigurations)
     .set(updateData)
     .where(eq(wahaConfigurations.id, id));
+
+  // Get the updated config to check if it's active
+  const updated = await db
+    .select()
+    .from(wahaConfigurations)
+    .where(eq(wahaConfigurations.id, id))
+    .limit(1);
+
+  const config = updated.length > 0 ? updated[0] : null;
+
+  // Se a configuração foi ativada, sincroniza sessões do WAHA
+  if (config?.isActive) {
+    await syncSessionsFromWAHA(config.baseUrl, config.apiKey || undefined);
+  }
+
+  return config;
 }
 
 export async function deleteWAHAConfiguration(id: number) {
@@ -2024,5 +2047,86 @@ export async function testWAHAConnection(baseUrl: string, apiKey?: string) {
       status: 0,
       message: `Erro de conexão: ${error.message || "Não foi possível conectar"}`,
     };
+  }
+}
+
+// Mapa de status WAHA -> Banco
+const WAHA_STATUS_MAP: Record<string, "disconnected" | "connecting" | "connected" | "error"> = {
+  CONNECTED: "connected",
+  DISCONNECTED: "disconnected",
+  STARTING: "connecting",
+  STOPPING: "disconnected",
+  QR_REQUIRED: "connecting",
+  FAILED: "error",
+};
+
+/**
+ * Sincroniza sessões do WAHA com o banco de dados
+ */
+export async function syncSessionsFromWAHA(baseUrl: string, apiKey?: string) {
+  const db = await getDb();
+  if (!db) return { synced: 0, errors: 0 };
+
+  try {
+    const response = await fetch(`${baseUrl}/api/sessions`, {
+      headers: apiKey ? { "X-Api-Key": apiKey } : {},
+      timeout: 10000,
+    });
+
+    if (!response.ok) {
+      console.error("[Sync] WAHA respondeu com erro:", response.status);
+      return { synced: 0, errors: 1 };
+    }
+
+    const data = await response.json();
+    const wahaSessions = data.sessions || data || [];
+    let synced = 0;
+    let errors = 0;
+
+    for (const ws of wahaSessions) {
+      try {
+        const sessionName = ws.name || ws.sessionName;
+        if (!sessionName) continue;
+
+        const mappedStatus = WAHA_STATUS_MAP[ws?.status] || "connecting";
+        const phoneNumber = ws?.me?.id || "";
+
+        // Verifica se já existe no banco
+        const existing = await db
+          .select()
+          .from(whatsappSessions)
+          .where(eq(whatsappSessions.sessionName, sessionName))
+          .limit(1);
+
+        if (existing.length > 0) {
+          // Atualiza existente
+          await db
+            .update(whatsappSessions)
+            .set({
+              status: mappedStatus,
+              phoneNumber: phoneNumber || null,
+              updatedAt: new Date(),
+            })
+            .where(eq(whatsappSessions.sessionName, sessionName));
+        } else {
+          // Cria novo
+          await db.insert(whatsappSessions).values({
+            sessionName,
+            status: mappedStatus,
+            phoneNumber: phoneNumber || null,
+          });
+        }
+        synced++;
+      } catch (err) {
+        console.error("[Sync] Erro ao sincronizar sessão:", err);
+        errors++;
+      }
+    }
+
+    console.log(`[Sync] Sincronizado: ${synced} sessões, ${errors} erros`);
+    return { synced, errors };
+  } catch (error) {
+    console.error("[Sync] Erro na sincronização:", error);
+    return { synced: 0, errors: 1 };
   }
 }
