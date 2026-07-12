@@ -21,6 +21,7 @@ import {
   aiConfigurations,
   knowledgeBaseDocuments,
   auditLogs,
+  attendanceQueue,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import bcrypt from "bcryptjs";
@@ -1183,6 +1184,174 @@ export async function listNotesByConversation(conversationId: number) {
     .from(notes)
     .where(eq(notes.conversationId, conversationId))
     .orderBy(desc(notes.createdAt));
+}
+
+// ============================================================================
+// ATTENDANCE QUEUE OPERATIONS
+// ============================================================================
+
+export async function addToAttendanceQueue(
+  conversationId: number,
+  contactId: number,
+  priority = 0
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Check if already in queue
+  const existing = await db
+    .select()
+    .from(attendanceQueue)
+    .where(eq(attendanceQueue.conversationId, conversationId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    return existing[0];
+  }
+
+  await db.insert(attendanceQueue).values({
+    conversationId,
+    contactId,
+    priority,
+    status: "waiting",
+    requestedAt: new Date(),
+  });
+
+  const created = await db
+    .select()
+    .from(attendanceQueue)
+    .where(eq(attendanceQueue.conversationId, conversationId))
+    .limit(1);
+
+  return created.length > 0 ? created[0] : null;
+}
+
+export async function getAttendanceQueueItem(conversationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(attendanceQueue)
+    .where(eq(attendanceQueue.conversationId, conversationId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function listAttendanceQueue(
+  status?: string,
+  assignedUserId?: number,
+  limit = 50,
+  offset = 0
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  let query = db
+    .select()
+    .from(attendanceQueue)
+    .orderBy(desc(attendanceQueue.priority), asc(attendanceQueue.requestedAt))
+    .limit(limit)
+    .offset(offset);
+
+  if (status) {
+    query = query.where(eq(attendanceQueue.status, status as any));
+  }
+
+  if (assignedUserId) {
+    query = query.where(eq(attendanceQueue.assignedUserId, assignedUserId));
+  }
+
+  return await query;
+}
+
+export async function assignQueueItem(
+  queueId: number,
+  userId: number
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(attendanceQueue)
+    .set({
+      status: "assigned",
+      assignedUserId: userId,
+      assignedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(attendanceQueue.id, queueId));
+}
+
+export async function startAttendance(queueId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(attendanceQueue)
+    .set({
+      status: "in_progress",
+      startedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(attendanceQueue.id, queueId));
+}
+
+export async function closeAttendance(queueId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(attendanceQueue)
+    .set({
+      status: "closed",
+      closedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(attendanceQueue.id, queueId));
+}
+
+export async function updateQueuePriority(queueId: number, priority: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .update(attendanceQueue)
+    .set({
+      priority,
+      updatedAt: new Date(),
+    })
+    .where(eq(attendanceQueue.id, queueId));
+}
+
+export async function removeFromAttendanceQueue(conversationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  return await db
+    .delete(attendanceQueue)
+    .where(eq(attendanceQueue.conversationId, conversationId));
+}
+
+export async function getQueueStats() {
+  const db = await getDb();
+  if (!db) return { waiting: 0, assigned: 0, inProgress: 0, closed: 0 };
+
+  const stats = await db
+    .select({
+      status: attendanceQueue.status,
+      count: sql<number>`count(*)`,
+    })
+    .from(attendanceQueue)
+    .groupBy(attendanceQueue.status);
+
+  const result = { waiting: 0, assigned: 0, inProgress: 0, closed: 0 };
+  for (const stat of stats) {
+    result[stat.status as keyof typeof result] = Number(stat.count);
+  }
+
+  return result;
 }
 
 // ============================================================================

@@ -130,16 +130,16 @@
 
 ## Fase 8: Atendimento Humano
 
-- [ ] Criar schema para fila de atendimento
-- [ ] Implementar status "Aguardando Atendente"
-- [ ] Implementar fila de atendimento
-- [ ] Implementar distribuição automática de conversas
-- [ ] Implementar distribuição manual de conversas
-- [ ] Implementar transferência entre atendentes
-- [ ] Implementar notas internas por conversa
-- [ ] Implementar visualização de fila para supervisor
-- [ ] Implementar reativação de IA pelo atendente
-- [ ] Implementar encerramento de conversa
+- [x] Criar schema para fila de atendimento
+- [x] Implementar status "Aguardando Atendente"
+- [x] Implementar fila de atendimento
+- [x] Implementar distribuição automática de conversas
+- [x] Implementar distribuição manual de conversas
+- [x] Implementar transferência entre atendentes
+- [x] Implementar notas internas por conversa
+- [x] Implementar visualização de fila para supervisor
+- [x] Implementar reativação de IA pelo atendente
+- [x] Implementar encerramento de conversa
 - [ ] Criar testes para atendimento humano
 
 ## Fase 9: Sistema de Automações

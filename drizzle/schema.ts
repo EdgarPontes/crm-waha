@@ -406,6 +406,40 @@ export type Note = typeof notes.$inferSelect;
 export type InsertNote = typeof notes.$inferInsert;
 
 // ============================================================================
+// ATTENDANCE QUEUE
+// ============================================================================
+export const attendanceQueue = pgTable(
+  "attendanceQueue",
+  {
+    id: integer().generatedAlwaysAsIdentity().primaryKey(),
+    conversationId: integer("conversationId").notNull().unique(),
+    contactId: integer("contactId").notNull(),
+    priority: integer("priority").default(0), // Higher = more urgent
+    status: varchar("status", { length: 50 }).default("waiting").notNull(), // waiting, assigned, in_progress, closed
+    assignedUserId: integer("assignedUserId"),
+    requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+    assignedAt: timestamp("assignedAt"),
+    startedAt: timestamp("startedAt"),
+    closedAt: timestamp("closedAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  table => ({
+    statusIdx: index("attendance_queue_status_idx").on(table.status),
+    assignedUserIdIdx: index("attendance_queue_assigned_user_idx").on(
+      table.assignedUserId
+    ),
+    priorityIdx: index("attendance_queue_priority_idx").on(table.priority),
+    requestedAtIdx: index("attendance_queue_requested_at_idx").on(
+      table.requestedAt
+    ),
+  })
+);
+
+export type AttendanceQueue = typeof attendanceQueue.$inferSelect;
+export type InsertAttendanceQueue = typeof attendanceQueue.$inferInsert;
+
+// ============================================================================
 // AUDIT LOGS
 // ============================================================================
 export const auditLogs = pgTable(

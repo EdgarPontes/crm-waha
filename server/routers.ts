@@ -7,6 +7,7 @@ import { whatsappRouter } from "./routers/whatsapp";
 import { aiRouter } from "./routers/ai";
 import { dashboardRouter } from "./routers/dashboard";
 import { authRouter } from "./routers/auth";
+import { attendanceQueueRouter } from "./routers/attendance";
 
 export const appRouter = router({
   system: systemRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   whatsapp: whatsappRouter,
   ai: aiRouter,
   dashboard: dashboardRouter,
+  attendance: attendanceQueueRouter,
 });
 
 export type AppRouter = typeof appRouter;
