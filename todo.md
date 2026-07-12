@@ -115,17 +115,17 @@
 
 ## Fase 7: Base de Conhecimento (RAG)
 
-- [ ] Criar schema para KnowledgeBaseDocuments
-- [ ] Implementar upload de arquivos PDF
-- [ ] Implementar upload de arquivos DOCX
-- [ ] Implementar upload de arquivos TXT
-- [ ] Implementar upload de arquivos CSV
-- [ ] Implementar extração de texto de PDFs
-- [ ] Implementar extração de texto de DOCX
-- [ ] Implementar sistema de embeddings para RAG
-- [ ] Implementar busca semântica na base de conhecimento
-- [ ] Integrar RAG com IA conversacional
-- [ ] Implementar interface de gerenciamento de documentos
+- [x] Criar schema para KnowledgeBaseDocuments
+- [x] Implementar upload de arquivos PDF
+- [x] Implementar upload de arquivos DOCX
+- [x] Implementar upload de arquivos TXT
+- [x] Implementar upload de arquivos CSV
+- [x] Implementar extração de texto de PDFs
+- [x] Implementar extração de texto de DOCX
+- [x] Implementar sistema de embeddings para RAG
+- [x] Implementar busca semântica na base de conhecimento
+- [x] Integrar RAG com IA conversacional
+- [x] Implementar interface de gerenciamento de documentos
 - [ ] Criar testes para RAG
 
 ## Fase 8: Atendimento Humano

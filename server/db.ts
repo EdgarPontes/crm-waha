@@ -1517,6 +1517,9 @@ export async function createKnowledgeBaseDocument(data: {
   fileType: string;
   fileUrl: string;
   content?: string;
+  embedding?: number[];
+  chunkIndex?: number;
+  totalChunks?: number;
   uploadedBy?: number;
 }) {
   const db = await getDb();
@@ -1527,6 +1530,9 @@ export async function createKnowledgeBaseDocument(data: {
     fileType: data.fileType as any,
     fileUrl: data.fileUrl,
     content: data.content,
+    embedding: data.embedding ? JSON.stringify(data.embedding) : null,
+    chunkIndex: data.chunkIndex ?? 0,
+    totalChunks: data.totalChunks ?? 1,
     uploadedBy: data.uploadedBy,
   });
 

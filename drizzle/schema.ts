@@ -335,6 +335,9 @@ export const knowledgeBaseDocuments = pgTable(
     fileType: knowledgeBaseFileTypeEnum("fileType").notNull(),
     fileUrl: varchar("fileUrl", { length: 512 }).notNull(),
     content: text("content"),
+    embedding: text("embedding"), // JSON string of vector embeddings
+    chunkIndex: integer("chunkIndex").default(0),
+    totalChunks: integer("totalChunks").default(1),
     uploadedBy: integer("uploadedBy"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },

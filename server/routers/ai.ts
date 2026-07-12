@@ -12,8 +12,12 @@ import {
   getLeadById,
   getStagesByPipeline,
   getDefaultPipeline,
+  listKnowledgeBaseDocuments,
+  createKnowledgeBaseDocument,
+  deleteKnowledgeBaseDocument,
 } from "../db";
 import { aiService, type AIConfig, type ChatMessage } from "../services/ai";
+import { createRAGService } from "../services/rag";
 
 export const aiRouter = router({
   config: router({
@@ -220,6 +224,7 @@ export const aiRouter = router({
   // KNOWLEDGE BASE (RAG)
   // ========================================================================
   knowledgeBase: router({
+    // Search knowledge base using RAG
     search: protectedProcedure
       .input(
         z.object({
@@ -227,13 +232,128 @@ export const aiRouter = router({
           limit: z.number().default(5),
         })
       )
-      .query(async ({ input }) => {
-        // Placeholder for RAG search - will be implemented in Phase 7
+      .mutation(async ({ input }) => {
+        const activeConfig = await getActiveAIConfiguration();
+        if (!activeConfig || !activeConfig.isActive) {
+          throw new Error("Nenhuma configuração de IA ativa para busca semântica");
+        }
+
+        const documents = await listKnowledgeBaseDocuments();
+        
+        // Filter documents with embeddings
+        const docsWithEmbeddings = documents
+          .filter(d => d.embedding)
+          .map(d => ({
+            id: d.id,
+            content: d.content || "",
+            embedding: JSON.parse(d.embedding!),
+          }));
+
+        if (docsWithEmbeddings.length === 0) {
+          return { query: input.query, results: [], count: 0 };
+        }
+
+        const ragService = createRAGService(activeConfig.apiKey);
+        const results = await ragService.searchSimilar(
+          input.query,
+          docsWithEmbeddings,
+          input.limit
+        );
+
         return {
           query: input.query,
-          results: [],
-          count: 0,
+          results,
+          count: results.length,
         };
+      }),
+
+    // Upload document to knowledge base
+    upload: protectedProcedure
+      .input(
+        z.object({
+          fileName: z.string(),
+          fileType: z.enum(["pdf", "docx", "txt", "csv"]),
+          fileUrl: z.string(),
+          content: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Create document record
+        let doc = null;
+        
+        // If content provided, process for embeddings first
+        if (input.content) {
+          const activeConfig = await getActiveAIConfiguration();
+          if (activeConfig && activeConfig.isActive) {
+            try {
+              const ragService = createRAGService(activeConfig.apiKey);
+              
+              // Process document into chunks with embeddings
+              const chunks = await ragService.processDocument(
+                Buffer.from(input.content),
+                input.fileType
+              );
+
+              // Create document with first chunk's embedding
+              if (chunks.length > 0) {
+                const firstChunk = chunks[0];
+                doc = await createKnowledgeBaseDocument({
+                  fileName: input.fileName,
+                  fileType: input.fileType as any,
+                  fileUrl: input.fileUrl,
+                  content: input.content,
+                  embedding: firstChunk.embedding,
+                  chunkIndex: 0,
+                  totalChunks: chunks.length,
+                  uploadedBy: ctx.user?.id,
+                });
+              }
+            } catch (error) {
+              console.error("[RAG] Error processing document:", error);
+            }
+          }
+        }
+        
+        // Fallback: create without embeddings
+        if (!doc) {
+          doc = await createKnowledgeBaseDocument({
+            fileName: input.fileName,
+            fileType: input.fileType as any,
+            fileUrl: input.fileUrl,
+            content: input.content,
+            uploadedBy: ctx.user?.id,
+          });
+        }
+
+        await createAuditLog(
+          ctx.user?.id,
+          "create",
+          "knowledge_base",
+          doc?.id,
+          { fileName: input.fileName }
+        );
+
+        return doc;
+      }),
+
+    // List all documents
+    list: protectedProcedure.query(async () => {
+      return await listKnowledgeBaseDocuments();
+    }),
+
+    // Delete document
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await deleteKnowledgeBaseDocument(input.id);
+        await createAuditLog(
+          ctx.user?.id,
+          "delete",
+          "knowledge_base",
+          input.id,
+          {}
+        );
+        return { success: true };
       }),
   }),
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Upload, Search, FileText, Trash2, Download, Plus } from "lucide-react";
+import { Upload, Search, FileText, Trash2, Download, Plus, Loader2 } from "lucide-react";
 
 interface Document {
   id: number;
@@ -23,6 +23,13 @@ interface Document {
   uploadedAt: Date;
   uploadedBy?: string;
   size?: number;
+  content?: string;
+}
+
+interface SearchResult {
+  id: number;
+  content: string;
+  similarity: number;
 }
 
 export default function KnowledgeBase() {
@@ -30,16 +37,37 @@ export default function KnowledgeBase() {
   const [searchQuery, setSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Fetch documents
+  const { data: fetchedDocuments, refetch: refetchDocuments } = trpc.ai.knowledgeBase.list.useQuery(
+    undefined,
+    { refetchOnWindowFocus: false }
+  );
+
+  useEffect(() => {
+    if (fetchedDocuments) {
+      setDocuments(fetchedDocuments as Document[]);
+    }
+  }, [fetchedDocuments]);
 
   const uploadMutation = trpc.ai.knowledgeBase.upload.useMutation({
-    onSuccess: data => {
-      setDocuments([...documents, data as Document]);
+    onSuccess: () => {
+      refetchDocuments();
       setSelectedFile(null);
     },
   });
 
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const searchQuery2 = searchQuery;
+  const searchMutation = trpc.ai.knowledgeBase.search.useMutation({
+    onSuccess: (data) => {
+      setSearchResults(data.results as SearchResult[]);
+      setIsSearching(false);
+    },
+    onError: () => {
+      setIsSearching(false);
+    },
+  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,25 +85,29 @@ export default function KnowledgeBase() {
       return;
     }
 
-    uploadMutation.mutate({
-      fileName: selectedFile.name,
-      fileType,
-      fileUrl: URL.createObjectURL(selectedFile),
-    });
+    // Convert file to base64 for upload
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      uploadMutation.mutate({
+        fileName: selectedFile.name,
+        fileType,
+        fileUrl: base64,
+        content: "", // Will be extracted on server
+      });
+    };
+    reader.readAsDataURL(selectedFile);
   };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    // Simulating search results
-    setSearchResults({
-      query: searchQuery,
-      results: [
-        "Resultado 1 da busca",
-        "Resultado 2 da busca",
-        "Resultado 3 da busca",
-      ],
-      count: 3,
-    });
+    setIsSearching(true);
+    searchMutation.mutate({ query: searchQuery, limit: 10 });
+  };
+
+  const handleClearSearch = () => {
+    setSearchResults(null);
+    setSearchQuery("");
   };
 
   const fileTypeColors: Record<string, string> = {
@@ -85,9 +117,10 @@ export default function KnowledgeBase() {
     csv: "bg-green-100 text-green-800",
   };
 
-  const handleClearSearch = () => {
-    setSearchResults(null);
-    setSearchQuery("");
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   return (
@@ -95,9 +128,7 @@ export default function KnowledgeBase() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Base de Conhecimento
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Base de Conhecimento</h1>
           <p className="text-muted-foreground mt-2">
             Gerencie documentos para consulta automática pela IA
           </p>
@@ -107,7 +138,7 @@ export default function KnowledgeBase() {
         <Tabs defaultValue="documents" className="w-full">
           <TabsList>
             <TabsTrigger value="documents">Documentos</TabsTrigger>
-            <TabsTrigger value="search">Buscar</TabsTrigger>
+            <TabsTrigger value="search">Buscar (RAG)</TabsTrigger>
           </TabsList>
 
           {/* Documents Tab */}
@@ -135,9 +166,7 @@ export default function KnowledgeBase() {
                   />
                   <Button
                     variant="outline"
-                    onClick={() =>
-                      document.getElementById("file-input")?.click()
-                    }
+                    onClick={() => document.getElementById("file-input")?.click()}
                   >
                     Selecionar Arquivo
                   </Button>
@@ -145,14 +174,15 @@ export default function KnowledgeBase() {
                     <div className="mt-4 text-sm">
                       <p className="font-medium">{selectedFile.name}</p>
                       <p className="text-muted-foreground">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        {formatFileSize(selectedFile.size)}
                       </p>
                       <Button
                         onClick={handleUpload}
                         disabled={uploadMutation.isPending}
                         className="mt-2"
                       >
-                        {uploadMutation.isPending ? "Enviando..." : "Enviar"}
+                        {uploadMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {uploadMutation.isPending ? "Processando..." : "Enviar e Indexar"}
                       </Button>
                     </div>
                   )}
@@ -165,8 +195,7 @@ export default function KnowledgeBase() {
               <CardHeader>
                 <CardTitle>Documentos Carregados</CardTitle>
                 <CardDescription>
-                  {documents.length} documento
-                  {documents.length !== 1 ? "s" : ""} na base de conhecimento
+                  {documents.length} documento{documents.length !== 1 ? "s" : ""} na base de conhecimento
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -184,15 +213,18 @@ export default function KnowledgeBase() {
                         <div className="flex items-center gap-3 flex-1">
                           <FileText className="h-5 w-5 text-muted-foreground" />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">
-                              {doc.fileName}
-                            </p>
+                            <p className="font-medium truncate">{doc.fileName}</p>
                             <p className="text-xs text-muted-foreground">
                               {doc.uploadedAt
-                                ? new Date(doc.uploadedAt).toLocaleDateString(
-                                    "pt-BR"
-                                  )
+                                ? new Date(doc.uploadedAt).toLocaleDateString("pt-BR", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
                                 : "Data desconhecida"}
+                              {doc.size && ` • ${formatFileSize(doc.size)}`}
                             </p>
                           </div>
                           <Badge className={fileTypeColors[doc.fileType]}>
@@ -200,11 +232,11 @@ export default function KnowledgeBase() {
                           </Badge>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" disabled>
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -219,9 +251,9 @@ export default function KnowledgeBase() {
           <TabsContent value="search" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Buscar na Base de Conhecimento</CardTitle>
+                <CardTitle>Busca Semântica (RAG)</CardTitle>
                 <CardDescription>
-                  Teste como a IA buscará informações nos documentos
+                  Teste como a IA buscará informações nos documentos usando embeddings
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -234,7 +266,8 @@ export default function KnowledgeBase() {
                       if (e.key === "Enter") handleSearch();
                     }}
                   />
-                  <Button onClick={handleSearch} disabled={!searchQuery.trim()}>
+                  <Button onClick={handleSearch} disabled={!searchQuery.trim() || isSearching}>
+                    {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <Search className="h-4 w-4 mr-2" />
                     Buscar
                   </Button>
@@ -246,31 +279,44 @@ export default function KnowledgeBase() {
                 </div>
 
                 {/* Search Results */}
-                {searchResults && searchResults.count > 0 && (
+                {searchResults && searchResults.length > 0 && (
                   <div className="space-y-3 mt-6">
                     <p className="text-sm font-medium">
-                      {searchResults.count} resultado
-                      {searchResults.count !== 1 ? "s" : ""} encontrado
-                      {searchResults.count !== 1 ? "s" : ""}
+                      {searchResults.length} resultado{searchResults.length !== 1 ? "s" : ""} encontrado{searchResults.length !== 1 ? "s" : ""}
                     </p>
-                    {searchResults.results?.map((result: any, idx: number) => (
+                    {searchResults.map((result, idx) => (
                       <div
                         key={idx}
-                        className="p-3 border rounded-lg bg-muted/50"
+                        className="p-4 border rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                       >
-                        <p className="text-sm text-muted-foreground">
-                          {result}
-                        </p>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-muted-foreground">
+                            Relevância: {(result.similarity * 100).toFixed(1)}%
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            Doc #{result.id}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{result.content}</p>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {searchResults?.count === 0 && (
+                {searchResults?.length === 0 && searchQuery && (
                   <div className="text-center py-8 text-muted-foreground">
-                    Nenhum resultado encontrado
+                    Nenhum resultado encontrado para "{searchQuery}"
                   </div>
                 )}
+
+                {/* Help text */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    <strong>Como funciona:</strong> A busca usa embeddings vetoriais para encontrar
+                    trechos semanticamente similares à sua pergunta, não apenas correspondência
+                    exata de palavras-chave.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -280,9 +326,8 @@ export default function KnowledgeBase() {
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
             <p className="text-sm text-blue-900">
-              <strong>💡 Dica:</strong> A IA consultará automaticamente estes
-              documentos ao responder mensagens de clientes. Mantenha a base de
-              conhecimento atualizada para melhores respostas.
+              <strong>💡 Dica:</strong> A IA consultará automaticamente estes documentos ao responder
+              mensagens de clientes. Mantenha a base de conhecimento atualizada para melhores respostas.
             </p>
           </CardContent>
         </Card>
