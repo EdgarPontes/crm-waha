@@ -144,26 +144,29 @@
 
 ## Fase 9: Sistema de Automações
 
-- [ ] Criar schema para Automations
-- [ ] Implementar painel de criação de automações
-- [ ] Implementar trigger: mensagem contém palavra-chave
-- [ ] Implementar trigger: cliente respondeu "sim"
-- [ ] Implementar trigger: inatividade de X horas
-- [ ] Implementar ação: mover lead no Kanban
-- [ ] Implementar ação: enviar follow-up automático
-- [ ] Implementar ação: adicionar tag
-- [ ] Implementar ação: atribuir a atendente
-- [ ] Implementar engine de execução de automações
+- [x] Criar schema para Automations
+- [x] Implementar painel de criação de automações
+- [x] Implementar trigger: mensagem contém palavra-chave
+- [x] Implementar trigger: cliente respondeu "sim"
+- [x] Implementar trigger: inatividade de X horas
+- [x] Implementar ação: mover lead no Kanban
+- [x] Implementar ação: enviar follow-up automático
+- [x] Implementar ação: adicionar tag
+- [x] Implementar ação: atribuir a atendente
+- [x] Implementar engine de execução de automações
+- [x] Integrar automações ao webhook WAHA
+- [x] Integrar automações ao router tRPC
 - [ ] Implementar testes para automações
 
 ## Fase 10: Sistema de Tags
 
-- [ ] Criar schema para Tags
-- [ ] Implementar CRUD de tags
-- [ ] Implementar aplicação manual de tags
-- [ ] Implementar aplicação automática de tags (via automações)
-- [ ] Implementar filtro por tags no Kanban
-- [ ] Implementar filtro por tags na lista de conversas
+- [x] Criar schema para Tags
+- [x] Implementar CRUD de tags
+- [x] Implementar aplicação manual de tags
+- [x] Implementar aplicação automática de tags (via automações)
+- [x] Implementar router tRPC para tags
+- [x] Implementar filtro por tags no Kanban
+- [x] Implementar filtro por tags na lista de conversas
 - [ ] Criar testes para tags
 
 ## Fase 11: Dashboard e Métricas

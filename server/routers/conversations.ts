@@ -22,12 +22,13 @@ export const conversationsRouter = router({
     .input(
       z.object({
         status: z.enum(["active", "waiting_human", "closed"]).optional(),
+        tag: z.string().optional(),
         limit: z.number().default(50),
         offset: z.number().default(0),
       })
     )
     .query(async ({ input }) => {
-      return await listConversations(input.status, input.limit, input.offset);
+      return await listConversations(input.status, input.limit, input.offset, input.tag);
     }),
 
   get: protectedProcedure

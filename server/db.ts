@@ -653,27 +653,38 @@ export async function getConversationById(id: number) {
 export async function listConversations(
   status?: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  tag?: string
 ) {
   const db = await getDb();
   if (!db) return [];
 
+  const whereConditions = [];
   if (status) {
-    return await db
-      .select()
-      .from(conversations)
-      .where(eq(conversations.status, status as any))
-      .orderBy(desc(conversations.lastMessageAt))
-      .limit(limit)
-      .offset(offset);
+    whereConditions.push(eq(conversations.status, status as any));
+  }
+  if (tag) {
+    whereConditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM leads 
+        WHERE leads.id = conversations.leadId 
+        AND ${tag} = ANY(leads.tags)
+      )`
+    );
   }
 
-  return await db
+  const query = db
     .select()
     .from(conversations)
     .orderBy(desc(conversations.lastMessageAt))
     .limit(limit)
     .offset(offset);
+
+  if (whereConditions.length > 0) {
+    return await query.where(and(...whereConditions));
+  }
+
+  return await query;
 }
 
 export async function updateConversationStatus(

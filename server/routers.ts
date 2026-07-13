@@ -10,6 +10,7 @@ import { dashboardRouter } from "./routers/dashboard";
 import { authRouter } from "./routers/auth";
 import { attendanceQueueRouter } from "./routers/attendance";
 import { automationRouter } from "./routers/automation";
+import { tagsRouter } from "./routers/tags";
 
 export const appRouter = router({
   system: systemRouter,
@@ -25,6 +26,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   attendance: attendanceQueueRouter,
   automation: automationRouter,
+  tags: tagsRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -53,7 +53,7 @@ async function syncSessionStatuses() {
       return;
     }
 
-    const wahaClient = getWAHAClient();
+    const wahaClient = await getWAHAClient();
     let wahaSessions: any[] = [];
     try {
       wahaSessions = await wahaClient.listSessions();
@@ -126,7 +126,7 @@ async function reconnectSessions() {
       return;
     }
 
-    const wahaClient = getWAHAClient();
+    const wahaClient = await getWAHAClient();
 
     for (const session of disconnectedSessions) {
       try {
@@ -190,7 +190,7 @@ async function reconnectSessions() {
 
 export async function registerWahaWebhook(sessionName: string, webhookUrl: string) {
   try {
-    const wahaClient = getWAHAClient();
+    const wahaClient = await getWAHAClient();
     await wahaClient.registerWebhook(sessionName, webhookUrl, [
       "message",
       "message.received",

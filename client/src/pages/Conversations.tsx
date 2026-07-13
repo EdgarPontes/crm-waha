@@ -34,6 +34,8 @@ import {
   Smile,
   MoreVertical,
   X,
+  Filter,
+  Tag,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -44,6 +46,20 @@ import {
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const EMOJIS = [
   "😀","😃","😄","😁","😆","😅","😂","🤣",
@@ -106,6 +122,7 @@ export default function Conversations() {
   >(null);
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set());
@@ -116,6 +133,7 @@ export default function Conversations() {
   const { data: conversations, isLoading: conversationsLoading, refetch: refetchConversations } =
     trpc.conversations.list.useQuery<Conversation[]>({
       status: "active",
+      tag: selectedTag || undefined,
       limit: 50,
     });
 
@@ -127,6 +145,11 @@ export default function Conversations() {
     );
 
   const selectedConversation = selectedConversationData as any;
+
+  // Fetch tags for filter
+  const { data: allTags } = trpc.tags.list.useQuery<string[]>({
+    enabled: true,
+  });
 
   // Send message mutation
   const sendMessageMutation = trpc.conversations.messages.send.useMutation({
@@ -209,6 +232,8 @@ export default function Conversations() {
         conv.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         conv.contact?.whatsappNumber.includes(searchTerm)
     ) || [];
+
+  const hasActiveFilters = searchTerm || selectedTag;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -363,6 +388,21 @@ export default function Conversations() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={selectedTag || ""} onValueChange={v => setSelectedTag(v || null)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allTags.map(tag => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
