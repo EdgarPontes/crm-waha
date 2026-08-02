@@ -12,6 +12,7 @@ import {
   updateWhatsAppSessionByName,
   createAuditLog,
 } from "../db";
+import { registerWahaWebhook } from "../waha-monitor";
 
 export const whatsappRouter = router({
   sessions: router({
@@ -28,9 +29,13 @@ export const whatsappRouter = router({
     create: adminProcedure
       .input(z.object({ sessionName: z.string() }))
       .mutation(async ({ input, ctx }) => {
-        // 1. Cria a sessão na API WAHA
+        // 1. Cria a sessão na API WAHA com webhook embutido
+        const port = parseInt(process.env.PORT || "3000");
+        const webhookBaseUrl = process.env.WAHA_WEBHOOK_URL || `http://localhost:${port}`;
+        const webhookUrl = `${webhookBaseUrl}/api/waha/webhook`;
+
         const wahaClient = await getWAHAClient();
-        await wahaClient.createSession(input.sessionName);
+        await wahaClient.createSession(input.sessionName, webhookUrl);
 
         // 2. Registra/upsert no banco de dados
         const db = await getDb();

@@ -8,7 +8,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { handleWahaWebhook } from "../waha-webhook";
-import { startSessionMonitor, registerWebhooksForAllSessions } from "../waha-monitor";
+import { startSessionMonitor } from "../waha-monitor";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -143,12 +143,6 @@ async function startServer() {
 
     // Start WAHA session monitor
     startSessionMonitor();
-
-    // Register webhooks for all sessions after a short delay
-    setTimeout(async () => {
-      const webhookBaseUrl = process.env.WAHA_WEBHOOK_URL || `http://localhost:${port}`;
-      await registerWebhooksForAllSessions(webhookBaseUrl);
-    }, 5000);
   });
 }
 

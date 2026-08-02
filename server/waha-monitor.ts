@@ -220,21 +220,3 @@ export async function registerWahaWebhook(sessionName: string, webhookUrl: strin
   }
 }
 
-export async function registerWebhooksForAllSessions(webhookBaseUrl: string) {
-  try {
-    const sessions = await listWhatsAppSessions();
-    if (!sessions) return;
-
-    const webhookUrl = `${webhookBaseUrl}/api/waha/webhook`;
-
-    for (const session of sessions) {
-      await registerWahaWebhook(session.sessionName, webhookUrl);
-    }
-
-    console.log(
-      `[WAHA Monitor] Registered webhooks for ${sessions.length} sessions`
-    );
-  } catch (error) {
-    console.error("[WAHA Monitor] Error registering webhooks:", error);
-  }
-}

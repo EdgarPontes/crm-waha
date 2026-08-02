@@ -25,6 +25,8 @@ import {
   Globe,
   Key,
   RefreshCw,
+  Webhook,
+  Link2,
 } from "lucide-react";
 import {
   Dialog,
@@ -58,6 +60,9 @@ export default function WAHAConfigurations() {
   const { data: configs, isLoading, refetch } = trpc.wahaConfig.list.useQuery();
 
   const { data: activeConfig } = trpc.wahaConfig.getActive.useQuery();
+
+  // Webhook URL configurado no servidor
+  const { data: webhookInfo } = trpc.waha.getWebhookUrl.useQuery();
 
   const createMutation = trpc.wahaConfig.create.useMutation({
     onSuccess: () => {
@@ -332,6 +337,49 @@ export default function WAHAConfigurations() {
             ))}
           </div>
         )}
+
+        {/* Webhook Info Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Webhook className="h-5 w-5" />
+              Webhook Configurado
+            </CardTitle>
+            <CardDescription>
+              URL que o WAHA usa para enviar eventos para este servidor
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {webhookInfo ? (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">URL do Webhook</p>
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <code className="text-sm font-mono bg-muted px-2 py-1 rounded break-all">
+                      {webhookInfo.url}
+                    </code>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Eventos Registrados</p>
+                  <div className="flex flex-wrap gap-1">
+                    {webhookInfo.events.map((event: string) => (
+                      <Badge key={event} variant="outline">
+                        {event}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando informações do webhook...
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Info Card */}
         <Card className="bg-blue-50 border-blue-200">

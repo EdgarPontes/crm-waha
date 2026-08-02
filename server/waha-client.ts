@@ -88,18 +88,17 @@ export class WAHAClient {
     const payload: any = {
       name: sessionName,
       start: true,
+      config: {
+        webhooks: webhookUrl
+          ? [
+              {
+                url: webhookUrl,
+                events: ["message.any"],
+              },
+            ]
+          : [],
+      },
     };
-
-    if (webhookUrl) {
-      payload.config = {
-        webhooks: [
-          {
-            url: webhookUrl,
-            events: ["message.any"],
-          },
-        ],
-      };
-    }
 
     try {
       const response = await this.client.post("/api/sessions", payload);
@@ -389,6 +388,53 @@ export class WAHAClient {
       console.error(`[WAHA] Erro ao obter contato:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Listar webhooks configurados para uma sessão
+   */
+  async listWebhooks(sessionName: string): Promise<any[]> {
+    // 1. Tenta GET /api/sessions/{session}/webhooks
+    try {
+      const response = await this.client.get(`/api/sessions/${sessionName}/webhooks`);
+      const data = response.data;
+      const webhooks = Array.isArray(data) ? data : data?.webhooks || [];
+      if (webhooks.length > 0) return webhooks;
+    } catch {
+      // Tenta próximo
+    }
+
+    // 2. Tenta GET /api/{session}/webhooks
+    try {
+      const response = await this.client.get(`/api/${sessionName}/webhooks`);
+      const data = response.data;
+      const webhooks = Array.isArray(data) ? data : data?.webhooks || [];
+      if (webhooks.length > 0) return webhooks;
+    } catch {
+      // Tenta próximo
+    }
+
+    // 3. Tenta GET /api/webhooks (global)
+    try {
+      const response = await this.client.get("/api/webhooks");
+      const data = response.data;
+      const webhooks = Array.isArray(data) ? data : data?.webhooks || [];
+      if (webhooks.length > 0) return webhooks;
+    } catch {
+      // Tenta próximo
+    }
+
+    // 4. Tenta obter da própria sessão (config.webhooks)
+    try {
+      const response = await this.client.get(`/api/sessions/${sessionName}`);
+      const data = response.data;
+      const webhooks = data?.config?.webhooks || data?.webhooks || [];
+      if (Array.isArray(webhooks) && webhooks.length > 0) return webhooks;
+    } catch {
+      // Ignora
+    }
+
+    return [];
   }
 
   /**

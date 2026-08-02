@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
@@ -21,6 +21,8 @@ import {
   Smartphone,
   QrCode,
   X,
+  Webhook,
+  Link2,
 } from "lucide-react";
 import {
   Dialog,
@@ -39,6 +41,79 @@ interface WhatsAppSession {
   qrCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+function SessionWebhookInfo({
+  sessionName,
+  webhookUrl,
+  onRegister,
+  isRegistering,
+}: {
+  sessionName: string;
+  webhookUrl?: string;
+  onRegister: (sessionName: string) => void;
+  isRegistering: boolean;
+}) {
+  const { data: webhooks, isLoading, error } = trpc.waha.listWebhooks.useQuery(
+    { sessionName },
+    { enabled: !!sessionName }
+  );
+
+  const hasWebhook = webhooks && webhooks.length > 0;
+  const registeredUrl = hasWebhook ? webhooks[0]?.url : undefined;
+
+  if (error) {
+    console.error(`Erro ao buscar webhooks para ${sessionName}:`, error);
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t">
+      <div className="flex items-center gap-2 mb-2">
+        <Webhook className="h-4 w-4 text-muted-foreground" />
+        <p className="font-medium text-sm">Webhook</p>
+        {isLoading ? (
+          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+        ) : hasWebhook ? (
+          <Badge className="bg-green-100 text-green-800 border-green-200">
+            <CheckCircle2 className="mr-1 h-3 w-3" />
+            Registrado
+          </Badge>
+        ) : (
+          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+            <AlertCircle className="mr-1 h-3 w-3" />
+            Não registrado
+          </Badge>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground mb-1">URL</p>
+          <p className="text-xs font-mono truncate">
+            {registeredUrl || webhookUrl || "Nenhum webhook configurado"}
+          </p>
+          {hasWebhook && webhooks[0]?.events && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {webhooks[0].events.map((event: string) => (
+                <Badge key={event} variant="outline" className="text-[10px]">
+                  {event}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onRegister(sessionName)}
+          disabled={isRegistering}
+        >
+          <Link2 className="mr-2 h-3 w-3" />
+          {isRegistering ? "Registrando..." : "Registrar"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default function WhatsAppSessions() {
@@ -97,6 +172,31 @@ export default function WhatsAppSessions() {
       toast.error(`Erro ao deletar: ${error.message}`);
     },
   });
+
+  // Webhook URL configurado no servidor
+  const { data: webhookInfo } = trpc.waha.getWebhookUrl.useQuery();
+
+  // Mutation para registrar webhook em uma sessão
+  const registerWebhookMutation = trpc.waha.registerWebhook.useMutation({
+    onSuccess: () => {
+      utils.waha.listWebhooks.invalidate();
+      toast.success("Webhook registrado com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(`Erro ao registrar webhook: ${error.message}`);
+    },
+  });
+
+  const handleRegisterWebhook = (sessionName: string) => {
+    if (!webhookInfo?.url) {
+      toast.error("URL do webhook não disponível");
+      return;
+    }
+    registerWebhookMutation.mutate({
+      sessionName,
+      webhookUrl: webhookInfo.url,
+    });
+  };
 
   const handleCreateSession = () => {
     setIsDialogOpen(true);
@@ -261,6 +361,13 @@ export default function WhatsAppSessions() {
                           </p>
                         </div>
                       </div>
+
+                      <SessionWebhookInfo
+                        sessionName={session.sessionName}
+                        webhookUrl={webhookInfo?.url}
+                        onRegister={handleRegisterWebhook}
+                        isRegistering={registerWebhookMutation.isPending}
+                      />
                     </div>
 
                     <div className="flex flex-col gap-2">

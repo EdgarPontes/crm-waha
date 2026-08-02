@@ -102,9 +102,13 @@ export const wahaRouter = router({
     .input(z.object({ sessionName: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        // 1. Chama a API WAHA para criar a sessão
+        // 1. Chama a API WAHA para criar a sessão com webhook embutido
+        const port = parseInt(process.env.PORT || "3000");
+        const webhookBaseUrl = process.env.WAHA_WEBHOOK_URL || `http://localhost:${port}`;
+        const webhookUrl = `${webhookBaseUrl}/api/waha/webhook`;
+
         const wahaClient = await getWAHAClient();
-        const session = await wahaClient.createSession(input.sessionName);
+        const session = await wahaClient.createSession(input.sessionName, webhookUrl);
 
         // 2. Salva no banco de dados (upsert para evitar duplicação)
         const db = await getDb();
@@ -415,4 +419,35 @@ export const wahaRouter = router({
         throw error;
       }
     }),
+
+  // Listar webhooks configurados para uma sessão
+  listWebhooks: protectedProcedure
+    .input(z.object({ sessionName: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const wahaClient = await getWAHAClient();
+        const webhooks = await wahaClient.listWebhooks(input.sessionName);
+        return webhooks;
+      } catch (error) {
+        console.error("[Router] Erro ao listar webhooks:", error);
+        return [];
+      }
+    }),
+
+  // Obter a URL do webhook configurado no servidor
+  getWebhookUrl: protectedProcedure.query(async () => {
+    const port = parseInt(process.env.PORT || "3000");
+    const webhookBaseUrl = process.env.WAHA_WEBHOOK_URL || `http://localhost:${port}`;
+    return {
+      url: `${webhookBaseUrl}/api/waha/webhook`,
+      events: [
+        "message",
+        "message.any",
+        "message.ack",
+        "message.status",
+        "session.status",
+        "state.change",
+      ],
+    };
+  }),
 });
