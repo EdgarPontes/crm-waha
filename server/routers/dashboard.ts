@@ -1,18 +1,15 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import {
-  listConversations,
-  listLeadsByStage,
-  getStagesByPipeline,
-  getDefaultPipeline,
+  getDashboardMetrics,
+  getAverageResponseTime,
+  getAverageAttendanceTime,
+  getAgentsMetrics,
+  getAiMetrics,
+  getSalesByPeriod,
+  getConversationsByPeriod,
+  getLeadsByPeriod,
 } from "../db";
-
-interface Stage {
-  id: number;
-  name: string;
-  pipelineId: number;
-  order: number;
-}
 
 export const dashboardRouter = router({
   metrics: protectedProcedure
@@ -23,106 +20,125 @@ export const dashboardRouter = router({
       })
     )
     .query(async ({ input }) => {
-      // Get conversations metrics
-      const activeConversations = await listConversations("active", 1000, 0);
-      const waitingConversations = await listConversations(
-        "waiting_human",
-        1000,
-        0
-      );
-      const closedConversations = await listConversations("closed", 1000, 0);
-
-      // Get pipeline metrics
-      const pipeline = await getDefaultPipeline();
-      const stages = pipeline ? await getStagesByPipeline(pipeline.id) : [];
-
-      const leadsByStage: Record<number, number> = {};
-      for (const stage of stages) {
-        const leads = await listLeadsByStage(stage.id);
-        leadsByStage[stage.id] = leads.length;
-      }
-
-      // Calculate conversion rate (simplified)
-      const totalLeads = Object.values(leadsByStage).reduce((a, b) => a + b, 0);
-      const wonStage = stages.find((s: Stage) => s.name === "Ganho");
-      const wonLeads = wonStage ? leadsByStage[wonStage.id] || 0 : 0;
-      const conversionRate = totalLeads > 0 ? (wonLeads / totalLeads) * 100 : 0;
-
-      // Calculate average response time (placeholder)
-      const avgResponseTime = 45; // minutes
-
-      // Calculate average attendance time (placeholder)
-      const avgAttendanceTime = 120; // minutes
+      const [baseMetrics, avgResponseTime, avgAttendanceTime] = await Promise.all([
+        getDashboardMetrics(input.startDate, input.endDate),
+        getAverageResponseTime(input.startDate, input.endDate),
+        getAverageAttendanceTime(input.startDate, input.endDate),
+      ]);
 
       return {
-        conversations: {
-          active: activeConversations.length,
-          waitingHuman: waitingConversations.length,
-          closed: closedConversations.length,
-          total:
-            activeConversations.length +
-            waitingConversations.length +
-            closedConversations.length,
-        },
-        leads: {
-          total: totalLeads,
-          byStage: leadsByStage,
-          won: wonLeads,
-          lost: stages.find((s: Stage) => s.name === "Perdido")
-            ? leadsByStage[
-                stages.find((s: Stage) => s.name === "Perdido")!.id
-              ] || 0
-            : 0,
-        },
-        metrics: {
-          conversionRate: parseFloat(conversionRate.toFixed(2)),
-          avgResponseTime,
-          avgAttendanceTime,
-          leadsCreated: totalLeads,
-        },
-        stages: stages.map((s: Stage) => ({
-          id: s.id,
-          name: s.name,
-          leadCount: leadsByStage[s.id] || 0,
-        })),
+        ...baseMetrics,
+        avgResponseTime,
+        avgAttendanceTime,
       };
     }),
 
-  // Placeholder for more detailed metrics
-  leadsMetrics: protectedProcedure.query(async () => {
-    return {
-      created: 0,
-      converted: 0,
-      lost: 0,
-      inProgress: 0,
-    };
-  }),
+  leadsMetrics: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const baseMetrics = await getDashboardMetrics(input.startDate, input.endDate);
+      return {
+        created: baseMetrics.leads.total,
+        won: baseMetrics.leads.won,
+        lost: baseMetrics.leads.lost,
+        inProgress: baseMetrics.leads.total - baseMetrics.leads.won - baseMetrics.leads.lost,
+      };
+    }),
 
-  conversationMetrics: protectedProcedure.query(async () => {
-    return {
-      total: 0,
-      active: 0,
-      waitingHuman: 0,
-      closed: 0,
-      avgResponseTime: 0,
-    };
-  }),
+  conversationMetrics: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const baseMetrics = await getDashboardMetrics(input.startDate, input.endDate);
+      const avgResponseTime = await getAverageResponseTime(input.startDate, input.endDate);
+      return {
+        total: baseMetrics.conversations.total,
+        active: baseMetrics.conversations.active,
+        waitingHuman: baseMetrics.conversations.waitingHuman,
+        closed: baseMetrics.conversations.closed,
+        avgResponseTime,
+      };
+    }),
 
-  aiMetrics: protectedProcedure.query(async () => {
-    return {
-      messagesProcessed: 0,
-      handoffCount: 0,
-      avgProcessingTime: 0,
-      successRate: 0,
-    };
-  }),
+  aiMetrics: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      return getAiMetrics(input.startDate, input.endDate);
+    }),
 
-  agentMetrics: protectedProcedure.query(async () => {
-    return {
-      totalAgents: 0,
-      activeAgents: 0,
-      avgAttendanceTime: 0,
-      totalAttendances: 0,
-    };
-  }),
+  agentMetrics: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const metrics = await getAgentsMetrics(input.startDate, input.endDate);
+      const activeAgents = metrics.filter(m => m.totalAttendances > 0 || m.totalLeads > 0).length;
+      const totalAttendances = metrics.reduce((sum, m) => sum + m.totalAttendances, 0);
+      const attendanceTimes = metrics.filter(m => m.avgAttendanceTime > 0).map(m => m.avgAttendanceTime);
+      const avgAttendanceTime =
+        attendanceTimes.length > 0
+          ? Math.round(attendanceTimes.reduce((a, b) => a + b, 0) / attendanceTimes.length)
+          : 0;
+
+      return {
+        agents: metrics,
+        totalAgents: metrics.length,
+        activeAgents,
+        avgAttendanceTime,
+        totalAttendances,
+      };
+    }),
+
+  salesByPeriod: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+        groupBy: z.enum(["day", "week", "month"]).default("day"),
+      })
+    )
+    .query(async ({ input }) => {
+      return getSalesByPeriod(input.startDate, input.endDate, input.groupBy);
+    }),
+
+  conversationsByPeriod: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+        groupBy: z.enum(["day", "week", "month"]).default("day"),
+      })
+    )
+    .query(async ({ input }) => {
+      return getConversationsByPeriod(input.startDate, input.endDate, input.groupBy);
+    }),
+
+  leadsByPeriod: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+        groupBy: z.enum(["day", "week", "month"]).default("day"),
+      })
+    )
+    .query(async ({ input }) => {
+      return getLeadsByPeriod(input.startDate, input.endDate, input.groupBy);
+    }),
 });

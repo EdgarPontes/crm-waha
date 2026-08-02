@@ -1992,6 +1992,542 @@ export async function listAuditLogs(
 }
 
 // ============================================================================
+// DASHBOARD METRICS
+// ============================================================================
+
+export async function getDashboardMetrics(startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) {
+    return {
+      conversations: { active: 0, waitingHuman: 0, closed: 0, total: 0 },
+      leads: { total: 0, won: 0, lost: 0, conversionRate: 0 },
+      avgResponseTime: 0,
+      avgAttendanceTime: 0,
+    };
+  }
+
+  const dateFilter = (field: any) => {
+    if (startDate && endDate) {
+      return and(sql`${field} >= ${startDate.toISOString()}`, sql`${field} <= ${endDate.toISOString()}`);
+    }
+    return undefined;
+  };
+
+  const convDateFilter = dateFilter(conversations.updatedAt);
+
+  const activeConversations = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(conversations)
+    .where(and(eq(conversations.status, "active"), ...(convDateFilter ? [convDateFilter] : [])));
+
+  const waitingConversations = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(conversations)
+    .where(and(eq(conversations.status, "waiting_human"), ...(convDateFilter ? [convDateFilter] : [])));
+
+  const closedConversations = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(conversations)
+    .where(and(eq(conversations.status, "closed"), ...(convDateFilter ? [convDateFilter] : [])));
+
+  const active = Number(activeConversations[0]?.count ?? 0);
+  const waitingHuman = Number(waitingConversations[0]?.count ?? 0);
+  const closed = Number(closedConversations[0]?.count ?? 0);
+
+  const leadDateFilter = dateFilter(leads.createdAt);
+
+  const totalLeadsResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(leads)
+    .where(leadDateFilter ? leadDateFilter : undefined);
+
+  const totalLeads = Number(totalLeadsResult[0]?.count ?? 0);
+
+  const pipeline = await getDefaultPipeline();
+  let wonLeads = 0;
+  let lostLeads = 0;
+
+  if (pipeline) {
+    const stages = await getStagesByPipeline(pipeline.id);
+    for (const stage of stages) {
+      const stageLeadCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(leads)
+        .where(
+          and(
+            eq(leads.stageId, stage.id),
+            ...(leadDateFilter ? [leadDateFilter] : [])
+          )
+        );
+      const count = Number(stageLeadCount[0]?.count ?? 0);
+      if (stage.name === "Ganho") wonLeads = count;
+      if (stage.name === "Perdido") lostLeads = count;
+    }
+  }
+
+  const conversionRate = totalLeads > 0 ? (wonLeads / totalLeads) * 100 : 0;
+
+  return {
+    conversations: { active, waitingHuman, closed, total: active + waitingHuman + closed },
+    leads: { total: totalLeads, won: wonLeads, lost: lostLeads, conversionRate: parseFloat(conversionRate.toFixed(2)) },
+    avgResponseTime: 0,
+    avgAttendanceTime: 0,
+  };
+}
+
+export async function getAverageResponseTime(startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const msgDateFilter = (column: any) => {
+    if (startDate && endDate) {
+      return and(sql`${column} >= ${startDate.toISOString()}`, sql`${column} <= ${endDate.toISOString()}`);
+    }
+    return undefined;
+  };
+  const filter = msgDateFilter(messages.createdAt);
+
+  try {
+    let query = db
+      .select({
+        convId: messages.conversationId,
+        incomingTime: sql<Date>`MAX(CASE WHEN ${messages.senderId} IS NULL THEN ${messages.createdAt} END)`,
+        outgoingTime: sql<Date>`MIN(CASE WHEN ${messages.senderId} IS NOT NULL THEN ${messages.createdAt} END)`,
+      })
+      .from(messages)
+      .groupBy(messages.conversationId);
+
+    if (filter) {
+      query = query.where(filter) as any;
+    }
+
+    const raw = await query;
+
+    const pairs = raw.filter(
+      (r: any) => r.incomingTime !== null && r.outgoingTime !== null && r.outgoingTime > r.incomingTime
+    );
+
+    if (pairs.length === 0) return 0;
+
+    let totalDiff = 0;
+    for (const pair of pairs) {
+      totalDiff += new Date(pair.outgoingTime as Date).getTime() - new Date(pair.incomingTime as Date).getTime();
+    }
+
+    return Math.round(totalDiff / pairs.length / (1000 * 60));
+  } catch {
+    return 0;
+  }
+}
+
+export async function getAverageAttendanceTime(startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const dateFilter = (column: any) => {
+    if (startDate && endDate) {
+      return and(sql`${column} >= ${startDate.toISOString()}`, sql`${column} <= ${endDate.toISOString()}`);
+    }
+    return undefined;
+  };
+
+  try {
+    let query = db
+      .select({
+        id: attendanceQueue.id,
+        startedAt: attendanceQueue.startedAt,
+        closedAt: attendanceQueue.closedAt,
+      })
+      .from(attendanceQueue)
+      .where(
+        and(
+          sql`${attendanceQueue.startedAt} IS NOT NULL`,
+          sql`${attendanceQueue.closedAt} IS NOT NULL`,
+          sql`${attendanceQueue.closedAt} > ${attendanceQueue.startedAt}`
+        )
+      );
+
+    if (startDate && endDate) {
+      const filter = dateFilter(attendanceQueue.closedAt);
+      if (filter) query = query.where(filter) as any;
+    }
+
+    const rows = await query;
+    if (rows.length === 0) return 0;
+
+    let totalDiff = 0;
+    for (const row of rows) {
+      totalDiff += new Date(row.closedAt!).getTime() - new Date(row.startedAt!).getTime();
+    }
+
+    return Math.round(totalDiff / rows.length / (1000 * 60));
+  } catch {
+    return 0;
+  }
+}
+
+export async function getAgentsMetrics(startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const allUsers = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users);
+
+    if (allUsers.length === 0) return [];
+
+    const leadDateFilter = (column: any) => {
+      if (startDate && endDate) {
+        return sql`${column} >= ${startDate.toISOString()} AND ${column} <= ${endDate.toISOString()}`;
+      }
+      return undefined;
+    };
+
+    const metrics: Array<{
+      userId: number;
+      name: string;
+      email: string;
+      totalLeads: number;
+      wonLeads: number;
+      totalAttendances: number;
+      avgAttendanceTime: number;
+    }> = [];
+
+    for (const user of allUsers) {
+      let leadsQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(leads)
+        .where(eq(leads.assignedToUserId, user.id));
+
+      if (leadDateFilter(leads.createdAt)) {
+        leadsQuery = leadsQuery.where(leadDateFilter(leads.createdAt)) as any;
+      }
+      const totalLeads = Number((await leadsQuery)[0]?.count ?? 0);
+
+      // Won leads for this user
+      const pipeline = await getDefaultPipeline();
+      let wonLeads = 0;
+      if (pipeline) {
+        const stages = await getStagesByPipeline(pipeline.id);
+        for (const stage of stages) {
+          if (stage.name === "Ganho") {
+            let wonQuery = db
+              .select({ count: sql<number>`count(*)` })
+              .from(leads)
+              .where(and(eq(leads.assignedToUserId, user.id), eq(leads.stageId, stage.id)));
+
+            if (leadDateFilter(leads.createdAt)) {
+              wonQuery = wonQuery.where(leadDateFilter(leads.createdAt)) as any;
+            }
+            wonLeads = Number((await wonQuery)[0]?.count ?? 0);
+          }
+        }
+      }
+
+      // Attendance stats for this user
+      let attQuery = db
+        .select({
+          total: sql<number>`count(*)`,
+          avgTime: sql<number>`AVG(EXTRACT(EPOCH FROM (${attendanceQueue.closedAt} - ${attendanceQueue.startedAt})))`,
+        })
+        .from(attendanceQueue)
+        .where(
+          and(
+            eq(attendanceQueue.assignedUserId, user.id),
+            sql`${attendanceQueue.startedAt} IS NOT NULL`,
+            sql`${attendanceQueue.closedAt} IS NOT NULL`
+          )
+        );
+
+      if (startDate && endDate) {
+        attQuery = attQuery.where(
+          and(
+            sql`${attendanceQueue.closedAt} >= ${startDate.toISOString()}`,
+            sql`${attendanceQueue.closedAt} <= ${endDate.toISOString()}`
+          )
+        ) as any;
+      }
+
+      const attStats = await attQuery;
+      const totalAttendances = Number(attStats[0]?.total ?? 0);
+      const avgAttendanceTime = totalAttendances > 0 ? Math.round((Number(attStats[0]?.avgTime ?? 0)) / 60) : 0;
+
+      metrics.push({
+        userId: user.id,
+        name: user.name ?? user.email,
+        email: user.email,
+        totalLeads,
+        wonLeads,
+        totalAttendances,
+        avgAttendanceTime,
+      });
+    }
+
+    return metrics;
+  } catch {
+    return [];
+  }
+}
+
+export async function getAiMetrics(startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) {
+    return { messagesProcessed: 0, handoffCount: 0, activeConversations: 0, aiConversationsTotal: 0 };
+  }
+
+  try {
+    const msgDateFilter = (column: any) => {
+      if (startDate && endDate) {
+        return and(sql`${column} >= ${startDate.toISOString()}`, sql`${column} <= ${endDate.toISOString()}`);
+      }
+      return undefined;
+    };
+
+    // AI messages: messages sent without a human senderId (bot messages)
+    let msgQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(messages)
+      .where(sql`${messages.senderId} IS NULL`);
+
+    if (startDate && endDate) {
+      const filter = msgDateFilter(messages.createdAt);
+      if (filter) msgQuery = msgQuery.where(filter) as any;
+    }
+
+    const messagesProcessed = Number((await msgQuery)[0]?.count ?? 0);
+
+    // AI conversations: conversations where aiProvider is not 'none'
+    let aiConvQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(conversations)
+      .where(sql`${conversations.aiProvider} IS NOT NULL AND ${conversations.aiProvider} != 'none'`);
+
+    if (startDate && endDate) {
+      aiConvQuery = aiConvQuery.where(
+        and(
+          sql`${conversations.createdAt} >= ${startDate.toISOString()}`,
+          sql`${conversations.createdAt} <= ${endDate.toISOString()}`
+        )
+      ) as any;
+    }
+    const aiConversationsTotal = Number((await aiConvQuery)[0]?.count ?? 0);
+
+    // Active AI conversations
+    let activeAiConvQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(conversations)
+      .where(
+        and(
+          sql`${conversations.aiProvider} IS NOT NULL AND ${conversations.aiProvider} != 'none'`,
+          eq(conversations.status, "active")
+        )
+      );
+    if (startDate && endDate) {
+      activeAiConvQuery = activeAiConvQuery.where(
+        and(
+          sql`${conversations.createdAt} >= ${startDate.toISOString()}`,
+          sql`${conversations.createdAt} <= ${endDate.toISOString()}`
+        )
+      ) as any;
+    }
+    const activeConversations = Number((await activeAiConvQuery)[0]?.count ?? 0);
+
+    // Handoff count: audit logs with action = 'transfer_conversation'
+    let handoffQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(auditLogs)
+      .where(eq(auditLogs.action, "transfer_conversation"));
+
+    if (startDate && endDate) {
+      handoffQuery = handoffQuery.where(
+        and(
+          sql`${auditLogs.createdAt} >= ${startDate.toISOString()}`,
+          sql`${auditLogs.createdAt} <= ${endDate.toISOString()}`
+        )
+      ) as any;
+    }
+
+    const handoffCount = Number((await handoffQuery)[0]?.count ?? 0);
+
+    return { messagesProcessed, handoffCount, activeConversations, aiConversationsTotal };
+  } catch {
+    return { messagesProcessed: 0, handoffCount: 0, activeConversations: 0, aiConversationsTotal: 0 };
+  }
+}
+
+export async function getSalesByPeriod(
+  startDate: Date,
+  endDate: Date,
+  groupBy: "day" | "week" | "month" = "day"
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const pipeline = await getDefaultPipeline();
+    if (!pipeline) return [];
+
+    const stages = await getStagesByPipeline(pipeline.id);
+    let wonStageId: number | null = null;
+    let lostStageId: number | null = null;
+
+    for (const stage of stages) {
+      if (stage.name === "Ganho") wonStageId = stage.id;
+      if (stage.name === "Perdido") lostStageId = stage.id;
+    }
+
+    const truncFormat = groupBy === "month"
+      ? "YYYY-MM"
+      : groupBy === "week"
+        ? "IYYY-IW"
+        : "YYYY-MM-DD";
+
+    // Leads created by period
+    const allLeadsResult = await db
+      .select({
+        period: sql<string>`TO_CHAR(${leads.createdAt}, ${truncFormat})`,
+        count: sql<number>`count(*)`,
+      })
+      .from(leads)
+      .where(
+        and(
+          sql`${leads.createdAt} >= ${startDate.toISOString()}`,
+          sql`${leads.createdAt} <= ${endDate.toISOString()}`
+        )
+      )
+      .groupBy(sql`TO_CHAR(${leads.createdAt}, ${truncFormat})`)
+      .orderBy(sql`TO_CHAR(${leads.createdAt}, ${truncFormat})`);
+
+    // Get won leads by period
+    let wonByPeriod: Array<{ period: string; count: number }> = [];
+    if (wonStageId) {
+      wonByPeriod = await db
+        .select({
+          period: sql<string>`TO_CHAR(${leads.closedAt}, ${truncFormat})`,
+          count: sql<number>`count(*)`,
+        })
+        .from(leads)
+        .where(
+          and(
+            eq(leads.stageId, wonStageId),
+            sql`${leads.closedAt} IS NOT NULL`,
+            sql`${leads.closedAt} >= ${startDate.toISOString()}`,
+            sql`${leads.closedAt} <= ${endDate.toISOString()}`
+          )
+        )
+        .groupBy(sql`TO_CHAR(${leads.closedAt}, ${truncFormat})`)
+        .orderBy(sql`TO_CHAR(${leads.closedAt}, ${truncFormat})`);
+    }
+
+    // Get lost leads by period
+    let lostByPeriod: Array<{ period: string; count: number }> = [];
+    if (lostStageId) {
+      lostByPeriod = await db
+        .select({
+          period: sql<string>`TO_CHAR(${leads.closedAt}, ${truncFormat})`,
+          count: sql<number>`count(*)`,
+        })
+        .from(leads)
+        .where(
+          and(
+            eq(leads.stageId, lostStageId),
+            sql`${leads.closedAt} IS NOT NULL`,
+            sql`${leads.closedAt} >= ${startDate.toISOString()}`,
+            sql`${leads.closedAt} <= ${endDate.toISOString()}`
+          )
+        )
+        .groupBy(sql`TO_CHAR(${leads.closedAt}, ${truncFormat})`)
+        .orderBy(sql`TO_CHAR(${leads.closedAt}, ${truncFormat})`);
+    }
+
+    const wonMap = new Map(wonByPeriod.map((r: { period: string; count: number }) => [r.period, Number(r.count)]));
+    const lostMap = new Map(lostByPeriod.map((r: { period: string; count: number }) => [r.period, Number(r.count)]));
+
+    return allLeadsResult.map((r: { period: string; count: number }) => ({
+      period: r.period,
+      created: Number(r.count),
+      won: wonMap.get(r.period) ?? 0,
+      lost: lostMap.get(r.period) ?? 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getConversationsByPeriod(
+  startDate: Date,
+  endDate: Date,
+  groupBy: "day" | "week" | "month" = "day"
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const truncFormat = groupBy === "month"
+      ? "YYYY-MM"
+      : groupBy === "week"
+        ? "IYYY-IW"
+        : "YYYY-MM-DD";
+
+    const result = await db
+      .select({
+        period: sql<string>`TO_CHAR(${conversations.createdAt}, ${truncFormat})`,
+        count: sql<number>`count(*)`,
+      })
+      .from(conversations)
+      .where(
+        and(
+          sql`${conversations.createdAt} >= ${startDate.toISOString()}`,
+          sql`${conversations.createdAt} <= ${endDate.toISOString()}`
+        )
+      )
+      .groupBy(sql`TO_CHAR(${conversations.createdAt}, ${truncFormat})`)
+      .orderBy(sql`TO_CHAR(${conversations.createdAt}, ${truncFormat})`);
+
+    return result.map((r: { period: string; count: number }) => ({ period: r.period, count: Number(r.count) }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getLeadsByPeriod(
+  startDate: Date,
+  endDate: Date,
+  groupBy: "day" | "week" | "month" = "day"
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const truncFormat = groupBy === "month"
+      ? "YYYY-MM"
+      : groupBy === "week"
+        ? "IYYY-IW"
+        : "YYYY-MM-DD";
+
+    const result = await db
+      .select({
+        period: sql<string>`TO_CHAR(${leads.createdAt}, ${truncFormat})`,
+        count: sql<number>`count(*)`,
+      })
+      .from(leads)
+      .where(
+        and(
+          sql`${leads.createdAt} >= ${startDate.toISOString()}`,
+          sql`${leads.createdAt} <= ${endDate.toISOString()}`
+        )
+      )
+      .groupBy(sql`TO_CHAR(${leads.createdAt}, ${truncFormat})`)
+      .orderBy(sql`TO_CHAR(${leads.createdAt}, ${truncFormat})`);
+
+    return result.map((r: { period: string; count: number }) => ({ period: r.period, count: Number(r.count) }));
+  } catch {
+    return [];
+  }
+}
+
+// ============================================================================
 // WAHA CONFIGURATION OPERATIONS
 // ============================================================================
 

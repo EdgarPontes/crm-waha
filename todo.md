@@ -171,18 +171,18 @@
 
 ## Fase 11: Dashboard e Métricas
 
-- [ ] Implementar cálculo de leads criados
-- [ ] Implementar cálculo de conversas abertas
-- [ ] Implementar cálculo de conversas encerradas
-- [ ] Implementar cálculo de taxa de conversão
-- [ ] Implementar cálculo de tempo médio de resposta
-- [ ] Implementar cálculo de tempo médio de atendimento
-- [ ] Implementar cálculo de quantidade por atendente
-- [ ] Implementar cálculo de quantidade por IA
-- [ ] Implementar cálculo de vendas por período
-- [ ] Criar componentes visuais do dashboard
-- [ ] Implementar gráficos de métricas
-- [ ] Criar testes para dashboard
+- [x] Implementar cálculo de leads criados
+- [x] Implementar cálculo de conversas abertas
+- [x] Implementar cálculo de conversas encerradas
+- [x] Implementar cálculo de taxa de conversão
+- [x] Implementar cálculo de tempo médio de resposta
+- [x] Implementar cálculo de tempo médio de atendimento
+- [x] Implementar cálculo de quantidade por atendente
+- [x] Implementar cálculo de quantidade por IA
+- [x] Implementar cálculo de vendas por período
+- [x] Criar componentes visuais do dashboard
+- [x] Implementar gráficos de métricas
+- [x] Criar testes para dashboard
 
 ## Fase 12: Auditoria e Segurança
 
