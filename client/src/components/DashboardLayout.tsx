@@ -32,6 +32,7 @@ import {
   Smartphone,
   UserPlus,
   Server,
+  ShieldCheck,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -47,6 +48,7 @@ const menuItems = [
   { label: "Base Conhecimento", path: "/knowledge-base", icon: BookOpen },
   { label: "Automações", path: "/automations", icon: Zap },
   { label: "Equipe", path: "/team-management", icon: Users },
+  { label: "Usuários", path: "/user-management", icon: ShieldCheck },
   { label: "WhatsApp", path: "/whatsapp-sessions", icon: Smartphone },
   { label: "Config. WAHA", path: "/waha-configurations", icon: Server },
 ];

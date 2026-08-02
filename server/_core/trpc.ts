@@ -53,3 +53,26 @@ export const adminProcedure = t.procedure.use(
     });
   })
 );
+
+export const supervisorProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+
+    if (
+      !ctx.user ||
+      (ctx.user.role !== "Administrador" && ctx.user.role !== "Supervisor")
+    ) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Acesso restrito a supervisores e administradores",
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user,
+      },
+    });
+  })
+);

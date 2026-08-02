@@ -12,6 +12,7 @@ import AISettings from "./pages/AISettings";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import Automations from "./pages/Automations";
 import TeamManagement from "./pages/TeamManagement";
+import UserManagement from "./pages/UserManagement";
 import WhatsAppSessions from "./pages/WhatsAppSessions";
 import WAHAConfigurations from "./pages/WAHAConfigurations";
 import Contacts from "./pages/Contacts";
@@ -150,6 +151,14 @@ function Router() {
         component={() => (
           <ProtectedRoute>
             <TeamManagement />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/user-management"
+        component={() => (
+          <ProtectedRoute>
+            <UserManagement />
           </ProtectedRoute>
         )}
       />

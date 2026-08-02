@@ -11,12 +11,14 @@ import { authRouter } from "./routers/auth";
 import { attendanceQueueRouter } from "./routers/attendance";
 import { automationRouter } from "./routers/automation";
 import { tagsRouter } from "./routers/tags";
+import { usersRouter } from "./routers/users";
 
 export const appRouter = router({
   system: systemRouter,
   waha: wahaRouter,
   wahaConfig: wahaConfigRouter,
   auth: authRouter,
+  users: usersRouter,
 
   // CRM Routers
   crm: crmRouter,

@@ -155,11 +155,100 @@ export async function getUserById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserByIdPublic(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      loginMethod: users.loginMethod,
+      role: users.role,
+      emailVerified: users.emailVerified,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
 export async function listUsers() {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(users);
+  return await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      loginMethod: users.loginMethod,
+      role: users.role,
+      emailVerified: users.emailVerified,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users);
+}
+
+export async function listUsersByRole(role: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      loginMethod: users.loginMethod,
+      role: users.role,
+      emailVerified: users.emailVerified,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(eq(users.role, role as any));
+}
+
+export async function getUserStats() {
+  const db = await getDb();
+  if (!db) {
+    return {
+      total: 0,
+      administrators: 0,
+      supervisors: 0,
+      atendentes: 0,
+      verified: 0,
+    };
+  }
+
+  const allUsers = (await db.select().from(users)) as Array<{
+    id: number;
+    role: string;
+    emailVerified: boolean;
+  }>;
+
+  return {
+    total: allUsers.length,
+    administrators: allUsers.filter(
+      (u: { role: string }) => u.role === "Administrador"
+    ).length,
+    supervisors: allUsers.filter(
+      (u: { role: string }) => u.role === "Supervisor"
+    ).length,
+    atendentes: allUsers.filter(
+      (u: { role: string }) => u.role === "Atendente"
+    ).length,
+    verified: allUsers.filter(
+      (u: { emailVerified: boolean }) => u.emailVerified
+    ).length,
+  };
 }
 
 export async function updateUserRole(userId: number, role: string) {

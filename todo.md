@@ -200,11 +200,11 @@
 
 ## Fase 13: Gerenciamento de Usuários
 
-- [ ] Implementar CRUD de usuários (admin only)
-- [ ] Implementar atribuição de roles (Administrador, Supervisor, Atendente)
-- [ ] Implementar interface de gerenciamento de usuários
-- [ ] Implementar validação de permissões por role
-- [ ] Criar testes para gerenciamento de usuários
+- [x] Implementar CRUD de usuários (admin only)
+- [x] Implementar atribuição de roles (Administrador, Supervisor, Atendente)
+- [x] Implementar interface de gerenciamento de usuários
+- [x] Implementar validação de permissões por role
+- [x] Criar testes para gerenciamento de usuários
 
 ## Fase 14: Testes e Otimizações
 
