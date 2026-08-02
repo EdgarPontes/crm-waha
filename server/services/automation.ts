@@ -9,6 +9,7 @@ import {
   assignConversationToUser,
   createAuditLog,
   listActiveAutomations,
+  getContactById,
 } from "../db";
 import { getWAHAClient } from "../waha-client";
 
@@ -28,7 +29,7 @@ interface ActionContext {
 
 export async function checkAndExecuteAutomations(context: ActionContext) {
   const { conversationId, sessionName, from, phoneNumber, userMessage, contactId } = context;
-  
+
   const contact = await getContactByWhatsappNumber(phoneNumber);
   if (!contact) {
     console.error(
@@ -56,6 +57,7 @@ export async function checkAndExecuteAutomations(context: ActionContext) {
         userMessage,
         conversationId,
         sessionName,
+        contactId,
       });
     }
   }
@@ -88,11 +90,11 @@ function checkMessageContains(message: string, triggerValue: string): CheckResul
 
   const lowerMessage = message.toLowerCase();
   const lowerValue = triggerValue.toLowerCase();
-  
+
   return {
     shouldTrigger: lowerMessage.includes(lowerValue),
-    reason: lowerMessage.includes(lowerValue) 
-      ? `Mensagem contém "${triggerValue}"` 
+    reason: lowerMessage.includes(lowerValue)
+      ? `Mensagem contém "${triggerValue}"`
       : `Mensagem não contém "${triggerValue}"`,
   };
 }
@@ -102,14 +104,14 @@ function checkResponseYes(message: string): CheckResult {
     "sim", "s", "yes", "y", "claro", "conforme",
     "aceito", "vou", "quero", "gostaria", "preciso"
   ];
-  
+
   const lowerMessage = message.toLowerCase().trim();
-  
+
   const isPositive = positiveResponses.some((term) => lowerMessage.includes(term));
   return {
     shouldTrigger: isPositive,
-    reason: isPositive 
-      ? "Resposta positiva detectada" 
+    reason: isPositive
+      ? "Resposta positiva detectada"
       : "Não é uma resposta positiva",
   };
 }
@@ -169,7 +171,7 @@ async function executeAutomationAction(
       phoneNumber,
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       `[Automation] Erro ao executar automação ${automation.id}: ${error.message}`,
       {
@@ -227,8 +229,9 @@ async function executeSendMessage(
     throw new Error("Mensagem não fornecida na actionValue da automação");
   }
 
-  const wahaClient = getWAHAClient(sessionName);
-  await wahaClient.sendMessage(phoneNumber, message);
+  const wahaClient = await getWAHAClient();
+  const chatId = phoneNumber.includes("@") ? phoneNumber : `${phoneNumber}@c.us`;
+  await wahaClient.sendMessage(sessionName, chatId, message);
 }
 
 async function executeAddTag(

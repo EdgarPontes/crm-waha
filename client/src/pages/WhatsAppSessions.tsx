@@ -50,6 +50,8 @@ export default function WhatsAppSessions() {
     null
   );
   const [isCreating, setIsCreating] = useState(false);
+  const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const { data: sessions, isLoading, refetch } = trpc.whatsapp.sessions.list.useQuery(
     undefined,
@@ -124,28 +126,38 @@ export default function WhatsAppSessions() {
   };
 
   const handleShowQR = async (session: WhatsAppSession) => {
-    setSelectedSession(session);
-    try {
-      const response = await fetch(
-        `/api/trpc/whatsapp.sessions.getQR?sessionName=${encodeURIComponent(
-          session.sessionName
-        )}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+    setSelectedSession({ ...session, qrCode: null });
+    setIsQRDialogOpen(true);
+    setQrLoading(true);
+
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        const data = await utils.client.whatsapp.sessions.getQR.query({
+          sessionName: session.sessionName,
+        });
+        if (data?.qrCode) {
+          setSelectedSession((prev) =>
+            prev ? { ...prev, qrCode: data.qrCode } : null
+          );
+          setQrLoading(false);
+          return;
         }
-      );
-      const data = await response.json();
-      if (data.result?.data?.json?.qrCode) {
-        setSelectedSession((prev) =>
-          prev ? { ...prev, qrCode: data.result.data.json.qrCode } : null
-        );
+      } catch (error: unknown) {
+        if (attempts >= maxAttempts) {
+          const message = error instanceof Error ? error.message : "Erro desconhecido";
+          console.error("Erro ao buscar QR Code:", error);
+          toast.error(`Aguardando geração do QR Code: ${message}`);
+        }
       }
-    } catch (error) {
-      console.error("Erro ao buscar QR Code:", error);
-      toast.error("Erro ao obter QR Code");
+      if (attempts < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 2000));
+      }
     }
+    setQrLoading(false);
   };
 
   type SessionStatus = "connected" | "disconnected" | "connecting" | "error";
@@ -195,7 +207,7 @@ export default function WhatsAppSessions() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </CardContent>
           </Card>
-        ) : sessions.length === 0 ? (
+        ) : sessionsData.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center">
               <Smartphone className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -383,9 +395,12 @@ export default function WhatsAppSessions() {
 
         {/* QR Code Dialog */}
         <Dialog
-          open={!!selectedSession?.qrCode}
+          open={isQRDialogOpen}
           onOpenChange={(open) => {
-            if (!open) setSelectedSession(null);
+            if (!open) {
+              setIsQRDialogOpen(false);
+              setSelectedSession(null);
+            }
           }}
         >
           <DialogContent className="max-w-md">
@@ -413,7 +428,10 @@ export default function WhatsAppSessions() {
                 <div className="flex justify-end">
                   <Button
                     variant="outline"
-                    onClick={() => setSelectedSession(null)}
+                    onClick={() => {
+                      setIsQRDialogOpen(false);
+                      setSelectedSession(null);
+                    }}
                   >
                     <X className="mr-2 h-4 w-4" />
                     Fechar
@@ -421,8 +439,11 @@ export default function WhatsAppSessions() {
                 </div>
               </div>
             ) : (
-              <div className="flex justify-center py-8">
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  {qrLoading ? "Carregando QR Code..." : "Aguardando QR Code..."}
+                </p>
               </div>
             )}
           </DialogContent>

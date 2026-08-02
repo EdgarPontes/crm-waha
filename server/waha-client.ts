@@ -51,8 +51,13 @@ export class WAHAClient {
    */
   async listSessions(): Promise<SessionInfo[]> {
     try {
-      const response = await this.client.get("/api/sessions");
-      return response.data.sessions || [];
+      const response = await this.client.get("/api/sessions?all=true");
+      const rawSessions = response.data.sessions || response.data || [];
+      const list = Array.isArray(rawSessions) ? rawSessions : [];
+      return list.map((s: any) => ({
+        ...s,
+        sessionName: s.name || s.sessionName || s.id,
+      }));
     } catch (error) {
       console.error("[WAHA] Erro ao listar sessões:", error);
       throw error;
@@ -65,7 +70,11 @@ export class WAHAClient {
   async getSession(sessionName: string): Promise<SessionInfo> {
     try {
       const response = await this.client.get(`/api/sessions/${sessionName}`);
-      return response.data;
+      const data = response.data;
+      return {
+        ...data,
+        sessionName: data?.name || data?.sessionName || sessionName,
+      };
     } catch (error) {
       console.error(`[WAHA] Erro ao obter sessão ${sessionName}:`, error);
       throw error;
@@ -75,13 +84,46 @@ export class WAHAClient {
   /**
    * Criar uma nova sessão
    */
-  async createSession(sessionName: string): Promise<SessionInfo> {
+  async createSession(sessionName: string, webhookUrl?: string): Promise<SessionInfo> {
+    const payload: any = {
+      name: sessionName,
+      start: true,
+    };
+
+    if (webhookUrl) {
+      payload.config = {
+        webhooks: [
+          {
+            url: webhookUrl,
+            events: ["message.any"],
+          },
+        ],
+      };
+    }
+
     try {
-      const response = await this.client.post("/api/sessions", {
-        sessionName,
-      });
-      return response.data;
-    } catch (error) {
+      const response = await this.client.post("/api/sessions", payload);
+      const data = response.data;
+      return {
+        ...data,
+        sessionName: data?.name || data?.sessionName || sessionName,
+      };
+    } catch (error: any) {
+      if (error?.response?.status === 422 || error?.response?.data?.statusCode === 422) {
+        console.log(`[WAHA] Sessão "${sessionName}" já existe no WAHA. Atualizando via PUT se necessário...`);
+        if (webhookUrl) {
+          try {
+            await this.registerWebhook(sessionName, webhookUrl);
+          } catch {
+            // Ignora falha de webhook no fallback
+          }
+        }
+        try {
+          return await this.startSession(sessionName);
+        } catch {
+          return await this.getSession(sessionName);
+        }
+      }
       console.error(`[WAHA] Erro ao criar sessão ${sessionName}:`, error);
       throw error;
     }
@@ -91,13 +133,64 @@ export class WAHAClient {
    * Obter QR Code para conectar uma sessão
    */
   async getQRCode(sessionName: string): Promise<string> {
+    // 1. Tenta GET /api/{session}/auth/qr?format=image (Swagger WAHA: retorna imagem PNG direta)
     try {
-      const response = await this.client.get(`/api/sessions/${sessionName}/qr`);
-      return response.data.qr;
-    } catch (error) {
-      console.error(`[WAHA] Erro ao obter QR Code para ${sessionName}:`, error);
-      throw error;
+      const response = await this.client.get(
+        `/api/${sessionName}/auth/qr?format=image`,
+        { responseType: "arraybuffer" }
+      );
+      if (response.status === 200 && response.data) {
+        const base64 = Buffer.from(response.data).toString("base64");
+        return `data:image/png;base64,${base64}`;
+      }
+    } catch {
+      // Ignora erro e tenta o próximo formato
     }
+
+    // 2. Tenta GET /api/{session}/auth/qr (formato raw ou JSON)
+    try {
+      const response = await this.client.get(`/api/${sessionName}/auth/qr`);
+      const data = response.data;
+      if (typeof data === "string" && data.trim()) {
+        if (data.startsWith("data:image/") || data.startsWith("http")) return data;
+        return data;
+      }
+      const qr = data?.qr || data?.value || data?.raw || data?.image || data?.qrCode;
+      if (typeof qr === "string" && qr.trim()) {
+        if (qr.startsWith("data:image/") || qr.startsWith("http")) return qr;
+        return qr;
+      }
+    } catch {
+      // Ignora
+    }
+
+    // 3. Tenta GET /api/sessions/{session}/auth/qr?format=image (rota com /sessions/)
+    try {
+      const response = await this.client.get(
+        `/api/sessions/${sessionName}/auth/qr?format=image`,
+        { responseType: "arraybuffer" }
+      );
+      if (response.status === 200 && response.data) {
+        const base64 = Buffer.from(response.data).toString("base64");
+        return `data:image/png;base64,${base64}`;
+      }
+    } catch {
+      // Ignora
+    }
+
+    // 4. Tenta obter do objeto da própria sessão GET /api/sessions/{sessionName}
+    try {
+      const response = await this.client.get(`/api/sessions/${sessionName}`);
+      const data = response.data;
+      const qr = data?.qr || data?.qrCode || data?.auth?.qr || data?.auth?.raw;
+      if (typeof qr === "string" && qr.trim()) return qr;
+      if (qr?.image) return qr.image;
+      if (qr?.raw) return qr.raw;
+    } catch {
+      // Ignora
+    }
+
+    return "";
   }
 
   /**
@@ -210,13 +303,27 @@ export class WAHAClient {
    */
   async startSession(sessionName: string): Promise<SessionInfo> {
     try {
-      const response = await this.client.post("/api/sessions/start", {
-        sessionName,
-      });
-      return response.data;
+      let response;
+      try {
+        response = await this.client.post(`/api/sessions/${sessionName}/start`);
+      } catch {
+        try {
+          response = await this.client.post(`/api/${sessionName}/start`);
+        } catch {
+          response = await this.client.post("/api/sessions/start", {
+            name: sessionName,
+            sessionName,
+          });
+        }
+      }
+      const data = response.data;
+      return {
+        ...data,
+        sessionName: data?.name || data?.sessionName || sessionName,
+      };
     } catch (error) {
-      console.error(`[WAHA] Erro ao iniciar sessão ${sessionName}:`, error);
-      throw error;
+      console.warn(`[WAHA] Erro ao iniciar sessão ${sessionName}, buscando status atual:`, error);
+      return await this.getSession(sessionName);
     }
   }
 
@@ -285,13 +392,80 @@ export class WAHAClient {
   }
 
   /**
-   * Registrar webhook para receber eventos
+   * Registrar webhook para receber eventos (Swagger WAHA: POST /api/webhooks ou PATCH /api/sessions/{session})
    */
   async registerWebhook(
     sessionName: string,
     webhookUrl: string,
-    events: string[] = ["message", "message.status", "session.status"]
+    events: string[] = [
+      "message.any"
+    ]
   ): Promise<any> {
+    // 1. Tenta PUT /api/sessions/{session} (Método oficial do Swagger conforme SessionCreateRequest / Update)
+    try {
+      const response = await this.client.put(`/api/sessions/${sessionName}`, {
+        name: sessionName,
+        config: {
+          webhooks: [
+            {
+              url: webhookUrl,
+              events,
+            },
+          ],
+        },
+      });
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      }
+    } catch {
+      // Tenta próximo
+    }
+
+    // 2. Tenta PATCH /api/sessions/{session}
+    try {
+      const response = await this.client.patch(`/api/sessions/${sessionName}`, {
+        config: {
+          webhooks: [
+            {
+              url: webhookUrl,
+              events,
+            },
+          ],
+        },
+      });
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      }
+    } catch {
+      // Tenta próximo
+    }
+
+    // 3. Tenta POST /api/webhooks (Global Webhooks no Swagger WAHA)
+    try {
+      const response = await this.client.post("/api/webhooks", {
+        url: webhookUrl,
+        events,
+        session: sessionName,
+      });
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      }
+    } catch {
+      // Tenta próximo
+    }
+
+    // 4. Tenta POST /api/{session}/webhooks
+    try {
+      const response = await this.client.post(`/api/${sessionName}/webhooks`, {
+        url: webhookUrl,
+        events,
+      });
+      return response.data;
+    } catch {
+      // Tenta próximo
+    }
+
+    // 5. Fallback para rota legada /api/sessions/{session}/webhooks
     try {
       const response = await this.client.post(
         `/api/sessions/${sessionName}/webhooks`,
@@ -302,7 +476,7 @@ export class WAHAClient {
       );
       return response.data;
     } catch (error) {
-      console.error(`[WAHA] Erro ao registrar webhook:`, error);
+      console.error(`[WAHA] Erro ao registrar webhook para ${sessionName}:`, error);
       throw error;
     }
   }

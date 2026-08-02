@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText, Message, generateText } from "ai";
+import { streamText, generateText } from "ai";
 
 export type AIProvider = "openai" | "claude" | "gemini" | "ollama" | "openrouter";
 
@@ -11,7 +11,8 @@ export interface AIConfig {
   model: string;
   systemPrompt?: string;
   temperature: number;
-  maxTokens: number;
+  maxTokens?: number;
+  isActive?: boolean;
 }
 
 export interface ChatMessage {
@@ -75,13 +76,12 @@ class AIService {
       const client = this.getClient(config);
       const model = client(config.model);
 
-      // Simple test message
       const result = await generateText({
         model,
         messages: [{ role: "user", content: "Olá, responda apenas 'OK'" }],
         maxTokens: 10,
         temperature: 0,
-      });
+      } as any);
 
       return {
         success: true,
@@ -104,7 +104,7 @@ class AIService {
       const client = this.getClient(config);
       const model = client(config.model);
 
-      const aiMessages: Message[] = [
+      const aiMessages: Array<{ role: "user" | "assistant" | "system"; content: string }> = [
         ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
         ...messages.map((m) => ({ role: m.role, content: m.content })),
       ];
@@ -112,18 +112,18 @@ class AIService {
       const result = await generateText({
         model,
         messages: aiMessages,
-        maxTokens: config.maxTokens,
+        ...(config.maxTokens ? { maxTokens: config.maxTokens } : {}),
         temperature: config.temperature,
-      });
+      } as any);
 
       return {
         content: result.text,
         usage: result.usage
           ? {
-              promptTokens: result.usage.promptTokens,
-              completionTokens: result.usage.completionTokens,
-              totalTokens: result.usage.totalTokens,
-            }
+            promptTokens: result.usage.inputTokens ?? 0,
+            completionTokens: result.usage.outputTokens ?? 0,
+            totalTokens: (result.usage.inputTokens ?? 0) + (result.usage.outputTokens ?? 0),
+          }
           : undefined,
       };
     } catch (error: any) {
@@ -140,7 +140,7 @@ class AIService {
     const client = this.getClient(config);
     const model = client(config.model);
 
-    const aiMessages: Message[] = [
+    const aiMessages: Array<{ role: "user" | "assistant" | "system"; content: string }> = [
       ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
       ...messages.map((m) => ({ role: m.role, content: m.content })),
     ];
@@ -148,9 +148,9 @@ class AIService {
     const result = streamText({
       model,
       messages: aiMessages,
-      maxTokens: config.maxTokens,
+      ...(config.maxTokens ? { maxTokens: config.maxTokens } : {}),
       temperature: config.temperature,
-    });
+    } as any);
 
     for await (const chunk of result.textStream) {
       yield chunk;
@@ -159,7 +159,7 @@ class AIService {
 
   detectHandoff(message: string): { shouldHandoff: boolean; reason?: string } {
     const lowerMessage = message.toLowerCase();
-    
+
     const handoffKeywords = [
       "quero falar com atendente",
       "falar com humano",
@@ -186,7 +186,7 @@ class AIService {
     ];
 
     const foundKeyword = handoffKeywords.find((keyword) => lowerMessage.includes(keyword));
-    
+
     if (foundKeyword) {
       return {
         shouldHandoff: true,
@@ -194,8 +194,6 @@ class AIService {
       };
     }
 
-    // Check for repeated questions (simple heuristic)
-    // This would be more sophisticated in production
     return { shouldHandoff: false };
   }
 
@@ -209,7 +207,7 @@ class AIService {
     if (!contactInfo) return "";
 
     const parts: string[] = ["--- Contexto do Cliente ---"];
-    
+
     if (contactInfo.name) parts.push(`Nome: ${contactInfo.name}`);
     if (contactInfo.whatsappNumber) parts.push(`WhatsApp: ${contactInfo.whatsappNumber}`);
     if (contactInfo.leadStage) parts.push(`Estágio no Funil: ${contactInfo.leadStage}`);

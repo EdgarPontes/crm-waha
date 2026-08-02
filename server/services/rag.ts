@@ -1,5 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { embed } from "ai";
+import { embedMany } from "ai";
 
 export interface ExtractedContent {
   text: string;
@@ -39,7 +39,8 @@ export class RAGService {
   }
 
   private async extractPDF(buffer: Buffer): Promise<ExtractedContent> {
-    const pdfParse = (await import("pdf-parse")).default;
+    const pdfParse = await import("pdf-parse");
+    // @ts-expect-error - pdf-parse ESM export differs from types
     const data = await pdfParse(buffer);
     const text = data.text;
     return {
@@ -67,14 +68,15 @@ export class RAGService {
 
   private async extractCSV(buffer: Buffer): Promise<ExtractedContent> {
     const text = buffer.toString("utf-8");
+    const { parse } = await import("csv-parse/sync");
     const records = parse(text, {
       columns: true,
       skip_empty_lines: true,
-    });
-    
+    }) as Record<string, string>[];
+
     // Convert CSV to readable text
     const textContent = records
-      .map((row: Record<string, string>) => 
+      .map((row) =>
         Object.entries(row)
           .map(([key, value]) => `${key}: ${value}`)
           .join(" | ")
@@ -93,13 +95,13 @@ export class RAGService {
 
     while (start < text.length) {
       let end = start + CHUNK_SIZE;
-      
+
       // Try to break at sentence boundary
       if (end < text.length) {
         const lastPeriod = text.lastIndexOf(".", end);
         const lastNewline = text.lastIndexOf("\n", end);
         const breakPoint = Math.max(lastPeriod, lastNewline);
-        
+
         if (breakPoint > start + CHUNK_SIZE * 0.5) {
           end = breakPoint + 1;
         }
@@ -107,7 +109,7 @@ export class RAGService {
 
       chunks.push(text.slice(start, end).trim());
       start = end - CHUNK_OVERLAP;
-      
+
       if (start >= text.length) break;
     }
 
@@ -122,7 +124,7 @@ export class RAGService {
     const batchSize = 100;
     for (let i = 0; i < texts.length; i += batchSize) {
       const batch = texts.slice(i, i + batchSize);
-      const result = await embed({
+      const result = await embedMany({
         model,
         values: batch,
       });
@@ -153,7 +155,7 @@ export class RAGService {
     topK: number = 5
   ): Promise<{ id: number; content: string; similarity: number }[]> {
     const queryEmbedding = (await this.generateEmbeddings([query]))[0];
-    
+
     const similarities = documentEmbeddings.map(doc => ({
       id: doc.id,
       content: doc.content,
@@ -167,17 +169,17 @@ export class RAGService {
 
   private cosineSimilarity(a: number[], b: number[]): number {
     if (a.length !== b.length) return 0;
-    
+
     let dotProduct = 0;
     let normA = 0;
     let normB = 0;
-    
+
     for (let i = 0; i < a.length; i++) {
       dotProduct += a[i] * b[i];
       normA += a[i] * a[i];
       normB += b[i] * b[i];
     }
-    
+
     if (normA === 0 || normB === 0) return 0;
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }

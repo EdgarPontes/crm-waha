@@ -1,4 +1,7 @@
 import { z } from "zod";
+
+// Helper for zod v4 compatibility
+const zodEnum = <T extends string>(values: T[]) => z.enum(values as any) as any;
 import { router, protectedProcedure, adminProcedure } from "../_core/trpc";
 import {
   createAutomation,
@@ -15,10 +18,10 @@ export const automationRouter = router({
     .input(
       z.object({
         name: z.string().min(1, "Nome é obrigatório"),
-        trigger: z.enum(["message_contains", "response_yes", "inactivity_hours"]),
+        trigger: z.enum(["message_contains", "response_yes", "inactivity_hours"] as any),
         triggerValue: z.string().min(1, "Valor do gatilho é obrigatório"),
-        action: z.enum(["move_stage", "send_message", "add_tag", "assign_user"]),
-        actionValue: z.record(z.unknown()).optional(),
+        action: z.enum(["move_stage", "send_message", "add_tag", "assign_user"] as any),
+        actionValue: z.record(z.string(), z.any()).optional(),
         isActive: z.boolean().default(true),
       })
     )
@@ -68,10 +71,10 @@ export const automationRouter = router({
       z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
-        trigger: z.enum(["message_contains", "response_yes", "inactivity_hours"]).optional(),
+        trigger: z.enum(["message_contains", "response_yes", "inactivity_hours"] as any).optional(),
         triggerValue: z.string().min(1).optional(),
-        action: z.enum(["move_stage", "send_message", "add_tag", "assign_user"]).optional(),
-        actionValue: z.record(z.unknown()).optional(),
+        action: z.enum(["move_stage", "send_message", "add_tag", "assign_user"] as any).optional(),
+        actionValue: z.record(z.string(), z.any()).optional(),
         isActive: z.boolean().optional(),
       })
     )

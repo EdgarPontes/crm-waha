@@ -680,11 +680,21 @@ export async function listConversations(
     .limit(limit)
     .offset(offset);
 
-  if (whereConditions.length > 0) {
-    return await query.where(and(...whereConditions));
-  }
+  const convList = whereConditions.length > 0
+    ? await query.where(and(...whereConditions))
+    : await query;
 
-  return await query;
+  return await Promise.all(
+    convList.map(async (conv) => {
+      const contact = conv.contactId
+        ? await getContactById(conv.contactId)
+        : null;
+      return {
+        ...conv,
+        contact,
+      };
+    })
+  );
 }
 
 export async function updateConversationStatus(
@@ -2043,7 +2053,7 @@ export async function testWAHAConnection(baseUrl: string, apiKey?: string) {
   try {
     const response = await fetch(`${baseUrl}/api/sessions`, {
       headers: apiKey ? { "X-Api-Key": apiKey } : {},
-      timeout: 5000,
+      signal: AbortSignal.timeout(5000),
     });
     return {
       success: response.ok,
@@ -2081,7 +2091,7 @@ export async function syncSessionsFromWAHA(baseUrl: string, apiKey?: string) {
   try {
     const response = await fetch(`${baseUrl}/api/sessions`, {
       headers: apiKey ? { "X-Api-Key": apiKey } : {},
-      timeout: 10000,
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {

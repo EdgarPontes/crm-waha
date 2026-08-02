@@ -67,7 +67,10 @@ async function syncSessionStatuses() {
 
     const wahaSessionMap = new Map<string, any>();
     for (const ws of wahaSessions) {
-      wahaSessionMap.set(ws.sessionName, ws);
+      const sName = ws.name || ws.sessionName || ws.id;
+      if (sName) {
+        wahaSessionMap.set(sName, ws);
+      }
     }
 
     for (const dbSession of dbSessions) {
@@ -84,9 +87,14 @@ async function syncSessionStatuses() {
 
       const statusMap: Record<string, string> = {
         CONNECTED: "connected",
+        WORKING: "connected",
         DISCONNECTED: "disconnected",
         STARTING: "connecting",
         STOPPING: "disconnected",
+        SCAN_QR_CODE: "connecting",
+        QR_REQUIRED: "connecting",
+        PAUSED: "disconnected",
+        STOPPED: "disconnected",
         FAILED: "error",
         ERROR: "error",
       };
@@ -134,7 +142,7 @@ async function reconnectSessions() {
           `[WAHA Monitor] Attempting to reconnect session: ${session.sessionName}`
         );
 
-        await wahaClient.createSession(session.sessionName);
+        await wahaClient.startSession(session.sessionName);
 
         await updateWhatsAppSessionByName(session.sessionName, {
           status: "connecting",
@@ -193,10 +201,11 @@ export async function registerWahaWebhook(sessionName: string, webhookUrl: strin
     const wahaClient = await getWAHAClient();
     await wahaClient.registerWebhook(sessionName, webhookUrl, [
       "message",
-      "message.received",
+      "message.any",
       "message.ack",
       "message.status",
       "session.status",
+      "state.change",
     ]);
     console.log(
       `[WAHA Monitor] Webhook registered for session ${sessionName} -> ${webhookUrl}`

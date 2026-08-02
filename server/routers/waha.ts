@@ -30,7 +30,7 @@ export const wahaRouter = router({
   // Listar todas as sessões (sincroniza WAHA <-> banco de dados)
   listSessions: protectedProcedure.query(async () => {
     try {
-      const wahaClient = getWAHAClient();
+      const wahaClient = await getWAHAClient();
       const db = await getDb();
 
       // Busca sessões diretamente da API WAHA
@@ -61,7 +61,7 @@ export const wahaRouter = router({
               updatedAt: new Date(),
             })
             .where(eq(whatsappSessions.sessionName, ws?.name || ws?.sessionName))
-            .catch(err =>
+            .catch((err: unknown) =>
               console.error("[Router] Falha ao atualizar sessão no banco:", err)
             );
         }
@@ -88,7 +88,7 @@ export const wahaRouter = router({
     .input(z.object({ sessionName: z.string() }))
     .query(async ({ input }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const session = await wahaClient.getSession(input.sessionName);
         return session;
       } catch (error) {
@@ -103,7 +103,7 @@ export const wahaRouter = router({
     .mutation(async ({ input, ctx }) => {
       try {
         // 1. Chama a API WAHA para criar a sessão
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const session = await wahaClient.createSession(input.sessionName);
 
         // 2. Salva no banco de dados (upsert para evitar duplicação)
@@ -137,12 +137,13 @@ export const wahaRouter = router({
     .input(z.object({ sessionName: z.string() }))
     .query(async ({ input }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const qrCode = await wahaClient.getQRCode(input.sessionName);
         return { qrCode };
-      } catch (error) {
-        console.error("[Router] Erro ao obter QR Code:", error);
-        throw error;
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        console.error("[Router] Erro ao obter QR Code:", message);
+        throw new Error(`Falha ao obter QR Code: ${message}`);
       }
     }),
 
@@ -151,7 +152,7 @@ export const wahaRouter = router({
     .input(z.object({ sessionName: z.string() }))
     .mutation(async ({ input }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         await wahaClient.disconnectSession(input.sessionName);
 
         // Atualizar status no banco
@@ -175,7 +176,7 @@ export const wahaRouter = router({
     .input(z.object({ sessionName: z.string() }))
     .mutation(async ({ input }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         await wahaClient.deleteSession(input.sessionName);
 
         // Deletar do banco
@@ -204,7 +205,7 @@ export const wahaRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const result = await wahaClient.sendMessage(
           input.sessionName,
           input.chatId,
@@ -262,7 +263,7 @@ export const wahaRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const result = await wahaClient.sendMediaMessage(
           input.sessionName,
           input.chatId,
@@ -323,7 +324,7 @@ export const wahaRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const result = await wahaClient.sendLocationMessage(
           input.sessionName,
           input.chatId,
@@ -380,7 +381,7 @@ export const wahaRouter = router({
     )
     .query(async ({ input }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const messages = await wahaClient.getMessages(
           input.sessionName,
           input.chatId,
@@ -403,7 +404,7 @@ export const wahaRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const result = await wahaClient.registerWebhook(
           input.sessionName,
           input.webhookUrl

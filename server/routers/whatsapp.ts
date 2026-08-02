@@ -29,7 +29,7 @@ export const whatsappRouter = router({
       .input(z.object({ sessionName: z.string() }))
       .mutation(async ({ input, ctx }) => {
         // 1. Cria a sessão na API WAHA
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         await wahaClient.createSession(input.sessionName);
 
         // 2. Registra/upsert no banco de dados
@@ -93,8 +93,41 @@ export const whatsappRouter = router({
     getQR: protectedProcedure
       .input(z.object({ sessionName: z.string() }))
       .query(async ({ input }) => {
-        const wahaClient = getWAHAClient();
-        const qrCode = await wahaClient.getQRCode(input.sessionName);
+        const wahaClient = await getWAHAClient();
+
+        // First check if session exists in WAHA, or create/start it
+        let sessionInfo;
+        try {
+          sessionInfo = await wahaClient.getSession(input.sessionName);
+        } catch {
+          try {
+            sessionInfo = await wahaClient.createSession(input.sessionName);
+          } catch (err) {
+            throw new Error(`Sessão "${input.sessionName}" não encontrada no WAHA: ${err instanceof Error ? err.message : "Erro desconhecido"}`);
+          }
+        }
+
+        const statusUpper = String(sessionInfo?.status || "").toUpperCase();
+        if (statusUpper === "STOPPED" || statusUpper === "DISCONNECTED") {
+          try {
+            await wahaClient.startSession(input.sessionName);
+          } catch {
+            await wahaClient.createSession(input.sessionName);
+          }
+        }
+
+        // Get QR code
+        let qrCode;
+        try {
+          qrCode = await wahaClient.getQRCode(input.sessionName);
+        } catch (err) {
+          throw new Error(`Erro ao obter QR Code: ${err instanceof Error ? err.message : "Erro desconhecido"}`);
+        }
+
+        if (!qrCode) {
+          // Session might still be starting
+          throw new Error("QR Code ainda não disponível. A sessão pode ainda estar iniciando. Tente novamente em alguns segundos.");
+        }
 
         // Atualiza o QR Code no banco
         await updateWhatsAppSessionByName(input.sessionName, {
@@ -113,7 +146,7 @@ export const whatsappRouter = router({
       .input(z.object({ sessionName: z.string() }))
       .mutation(async ({ input, ctx }) => {
         // 1. Desconecta na API WAHA
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         await wahaClient.disconnectSession(input.sessionName);
 
         // 2. Atualiza o status no banco
@@ -148,7 +181,7 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const chatId = input.phoneNumber.includes("@")
           ? input.phoneNumber
           : `${input.phoneNumber}@c.us`;
@@ -178,7 +211,7 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const chatId = input.phoneNumber.includes("@")
           ? input.phoneNumber
           : `${input.phoneNumber}@c.us`;
@@ -210,7 +243,7 @@ export const whatsappRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const wahaClient = getWAHAClient();
+        const wahaClient = await getWAHAClient();
         const chatId = input.phoneNumber.includes("@")
           ? input.phoneNumber
           : `${input.phoneNumber}@c.us`;

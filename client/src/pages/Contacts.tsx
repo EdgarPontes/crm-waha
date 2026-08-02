@@ -116,7 +116,7 @@ export default function Contacts() {
 
   const filteredContacts =
     contacts?.filter(
-      (contact) =>
+      (contact: Contact) =>
         contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.whatsappNumber.includes(searchTerm) ||
         contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -257,7 +257,7 @@ export default function Contacts() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {filteredContacts.map((contact) => (
+                    {filteredContacts.map((contact: Contact) => (
                       <tr key={contact.id} className="hover:bg-muted/50">
                         <td className="py-4">
                           <div className="flex items-center gap-3">
@@ -349,7 +349,7 @@ export default function Contacts() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold">
-                  {contacts?.filter((c) => c.email).length || 0}
+                  {contacts?.filter((c: Contact) => c.email).length || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Com Email</p>
               </div>
@@ -359,7 +359,7 @@ export default function Contacts() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold">
-                  {contacts?.filter((c) => c.phone).length || 0}
+                  {contacts?.filter((c: Contact) => c.phone).length || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Com Telefone</p>
               </div>

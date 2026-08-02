@@ -278,7 +278,7 @@ async function processAIResponse(
     const messages = await listMessagesByConversation(conversationId, 10, 0);
     const chatHistory: ChatMessage[] = messages
       .reverse()
-      .map((msg) => ({
+      .map((msg: any) => ({
         role: msg.senderId ? "assistant" : "user",
         content: msg.content || "",
       }));
@@ -288,14 +288,14 @@ async function processAIResponse(
 
     // Get lead context if exists
     let systemPrompt = aiConfig.systemPrompt || "Você é um atendente de vendas profissional e útil.";
-    
+
     if (conversation.leadId) {
       const lead = await getLeadById(conversation.leadId);
       if (lead) {
         const pipeline = await getDefaultPipeline();
         if (pipeline) {
           const stages = await getStagesByPipeline(pipeline.id);
-          const currentStage = stages.find(s => s.id === lead.stageId);
+          const currentStage = stages.find((s: any) => s.id === lead.stageId);
           systemPrompt += `\n\nContexto do Lead:`;
           systemPrompt += `\n- Estágio atual: ${currentStage?.name || "Desconhecido"}`;
           systemPrompt += `\n- Tags: ${lead.tags?.join(", ") || "Nenhuma"}`;
@@ -322,14 +322,16 @@ async function processAIResponse(
     }
 
     // Send response via WAHA
-    const wahaClient = getWAHAClient(sessionName);
-    await wahaClient.sendMessage(phoneNumber, aiResponse);
+    const wahaClient = await getWAHAClient();
+    const chatId = phoneNumber.includes("@") ? phoneNumber : `${phoneNumber}@c.us`;
+    const responseText = typeof aiResponse === 'string' ? aiResponse : (aiResponse as any)?.content || String(aiResponse);
+    await wahaClient.sendMessage(sessionName, chatId, responseText);
 
     // Save AI response to database
     await createMessage(
       conversationId,
       "text",
-      aiResponse,
+      responseText,
       undefined,
       undefined, // senderId (AI)
       undefined,
@@ -356,7 +358,7 @@ function detectHandoffRequest(message: string): boolean {
     "urgente", "emergência", "supervisor", "gerente",
     "cancelar", "não quero mais", "desistir",
   ];
-  
+
   const lowerMessage = message.toLowerCase();
   return handoffKeywords.some((keyword) => lowerMessage.includes(keyword));
 }

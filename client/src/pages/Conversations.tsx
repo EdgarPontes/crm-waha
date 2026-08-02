@@ -53,13 +53,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const EMOJIS = [
   "😀","😃","😄","😁","😆","😅","😂","🤣",
@@ -129,10 +122,9 @@ export default function Conversations() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch conversations
+  // Fetch conversations (all statuses)
   const { data: conversations, isLoading: conversationsLoading, refetch: refetchConversations } =
     trpc.conversations.list.useQuery<Conversation[]>({
-      status: "active",
       tag: selectedTag || undefined,
       limit: 50,
     });
@@ -147,7 +139,7 @@ export default function Conversations() {
   const selectedConversation = selectedConversationData as any;
 
   // Fetch tags for filter
-  const { data: allTags } = trpc.tags.list.useQuery<string[]>({
+  const { data: allTags } = trpc.tags.list.useQuery<string[]>(undefined, {
     enabled: true,
   });
 
@@ -155,6 +147,14 @@ export default function Conversations() {
   const sendMessageMutation = trpc.conversations.messages.send.useMutation({
     onSuccess: () => {
       setMessageText("");
+      refetchMessages();
+      refetchConversations();
+    },
+  });
+
+  // Update conversation status mutation
+  const updateStatusMutation = trpc.conversations.updateStatus.useMutation({
+    onSuccess: () => {
       refetchMessages();
       refetchConversations();
     },
@@ -307,7 +307,7 @@ export default function Conversations() {
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{msg.content || "Documento"}</p>
               <p className="text-xs text-muted-foreground">
-                {msg.metadata?.fileName || "Arquivo"}
+                {((msg.metadata as Record<string, unknown>)?.fileName as string) || "Arquivo"}
               </p>
             </div>
             <Button
@@ -326,7 +326,7 @@ export default function Conversations() {
             <div className="flex-1">
               <p className="font-medium">Localização</p>
               <p className="text-xs text-muted-foreground">
-                {msg.metadata?.address || "Ver localização"}
+                {((msg.metadata as Record<string, unknown>)?.address as string) || "Ver localização"}
               </p>
             </div>
             <Button
@@ -348,12 +348,12 @@ export default function Conversations() {
 
     switch (msg.status) {
       case "read":
-        return <CheckCheck className="h-4 w-4 text-blue-500" title="Lida" />;
+        return <CheckCheck className="h-4 w-4 text-blue-500" />;
       case "delivered":
-        return <CheckCheck className="h-4 w-4 text-gray-400" title="Entregue" />;
+        return <CheckCheck className="h-4 w-4 text-gray-400" />;
       case "sent":
       default:
-        return <Check className="h-4 w-4 text-gray-400" title="Enviada" />;
+        return <Check className="h-4 w-4 text-gray-400" />;
     }
   };
 
@@ -396,7 +396,7 @@ export default function Conversations() {
                   <SelectValue placeholder="Tag" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allTags.map(tag => (
+                  {(allTags || []).map(tag => (
                     <SelectItem key={tag} value={tag}>
                       {tag}
                     </SelectItem>
@@ -520,23 +520,27 @@ export default function Conversations() {
                       <DropdownMenuItem
                         className="cursor-pointer text-orange-600"
                         onClick={() => {
-                          trpc.conversations.updateStatus.mutate({
-                            id: selectedConversationId,
-                            status: "waiting_human",
-                          });
+                          if (selectedConversationId) {
+                            updateStatusMutation.mutate({
+                              conversationId: selectedConversationId,
+                              status: "waiting_human",
+                            });
+                          }
                         }}
                       >
-                      Transferir para Atendente
-                    </DropdownMenuItem>
+                        Transferir para Atendente
+                      </DropdownMenuItem>
                     )}
                     {selectedConversation.status === "waiting_human" && (
                       <DropdownMenuItem
                         className="cursor-pointer text-green-600"
                         onClick={() => {
-                          trpc.conversations.updateStatus.mutate({
-                            id: selectedConversationId,
-                            status: "active",
-                          });
+                          if (selectedConversationId) {
+                            updateStatusMutation.mutate({
+                              conversationId: selectedConversationId,
+                              status: "active",
+                            });
+                          }
                         }}
                       >
                         Reativar IA
@@ -545,9 +549,9 @@ export default function Conversations() {
                     <DropdownMenuItem
                       className="cursor-pointer text-red-600"
                       onClick={() => {
-                        if (confirm("Encerrar esta conversa?")) {
-                          trpc.conversations.updateStatus.mutate({
-                            id: selectedConversationId,
+                        if (selectedConversationId && confirm("Encerrar esta conversa?")) {
+                          updateStatusMutation.mutate({
+                            conversationId: selectedConversationId,
                             status: "closed",
                           });
                         }
@@ -584,23 +588,19 @@ export default function Conversations() {
                       <p className="text-sm">Seja o primeiro a enviar uma mensagem</p>
                     </div>
                   ) : (
-                    selectedConversation.messages
+                    selectedConversation?.messages
                       ?.slice()
                       .reverse()
-                      .map((msg: Message, idx: number) => {
+                      .map((msg: Message, idx: number, arr: Message[]) => {
                         const isOwn = msg.senderId === user?.id;
+                        const prevMsg = arr[idx - 1];
                         const showTime =
-                          idx === 0 ||
-                          (selectedConversation.messages[
-                            selectedConversation.messages.length - 1 - idx - 1
-                          ] &&
+                          !prevMsg ||
+                          (msg.createdAt &&
+                            prevMsg.createdAt &&
                             new Date(msg.createdAt).getTime() -
-                              new Date(
-                                selectedConversation.messages[
-                                  selectedConversation.messages.length - 1 - idx - 1
-                                ].createdAt
-                              ).getTime() >
-                            5 * 60 * 1000);
+                              new Date(prevMsg.createdAt).getTime() >
+                              5 * 60 * 1000);
 
                         return (
                           <div

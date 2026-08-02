@@ -95,6 +95,7 @@ export const auditEntityEnum = pgEnum("audit_entity", [
   "user",
   "automation",
   "ai_config",
+  "session",
 ]);
 
 // ============================================================================

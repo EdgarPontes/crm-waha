@@ -173,7 +173,7 @@ export const attendanceQueueRouter = router({
     const now = Date.now();
     const waitTimes = waiting.map((q: any) => now - new Date(q.requestedAt).getTime());
     const avgWaitTime = waitTimes.length > 0
-      ? waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length
+      ? waitTimes.reduce((a: number, b: number) => a + b, 0) / waitTimes.length
       : 0;
 
     return {

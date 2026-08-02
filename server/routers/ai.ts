@@ -16,6 +16,7 @@ import {
   createKnowledgeBaseDocument,
   deleteKnowledgeBaseDocument,
 } from "../db";
+import type { Stage } from "../../drizzle/schema";
 import { aiService, type AIConfig, type ChatMessage } from "../services/ai";
 import { createRAGService } from "../services/rag";
 
@@ -159,7 +160,7 @@ export const aiRouter = router({
                 const pipeline = await getDefaultPipeline();
                 if (pipeline) {
                   const stages = await getStagesByPipeline(pipeline.id);
-                  const stage = stages.find((s) => s.id === lead.stageId);
+                  const stage = stages.find((s: Stage) => s.id === lead.stageId);
                   leadStage = stage?.name;
                 }
               }
@@ -242,8 +243,8 @@ export const aiRouter = router({
         
         // Filter documents with embeddings
         const docsWithEmbeddings = documents
-          .filter(d => d.embedding)
-          .map(d => ({
+          .filter((d: any) => d.embedding)
+          .map((d: any) => ({
             id: d.id,
             content: d.content || "",
             embedding: JSON.parse(d.embedding!),

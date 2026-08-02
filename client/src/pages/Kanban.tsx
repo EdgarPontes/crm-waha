@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Plus, Search, Filter, X, Calendar, User, Tag, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Filter, X, Calendar as CalendarIcon, User, Tag, MoreHorizontal } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Select,
   SelectContent,
@@ -251,7 +252,7 @@ function LeadCard({
                 variant={isOverdue ? "destructive" : "secondary"}
                 className="text-xs h-5 px-2 flex items-center gap-1"
               >
-                <Calendar className="h-3 w-3" />
+                <CalendarIcon className="h-3 w-3" />
                 {formatDistanceToNow(new Date(lead.dueDate), { addSuffix: true, locale: ptBR })}
               </Badge>
             )}
@@ -330,10 +331,10 @@ function LeadDetailDialog({
                 <p className="text-sm">{lead.contact.email}</p>
               </div>
             )}
-            {lead.contact?.phone && (
+            {lead.contact?.whatsappNumber && (
               <div>
                 <p className="text-xs text-muted-foreground">Telefone</p>
-                <p className="text-sm">{lead.contact.phone}</p>
+                <p className="text-sm">{lead.contact.whatsappNumber}</p>
               </div>
             )}
           </CardContent>
@@ -401,9 +402,9 @@ function LeadDetailDialog({
                   <Calendar
                     mode="single"
                     selected={dueDate}
-                    onSelect={date => {
+                    onSelect={(date: Date | undefined) => {
                       setDueDate(date);
-                      onUpdateDueDate(lead, date);
+                      onUpdateDueDate(lead, date ?? null);
                     }}
                     initialFocus
                   />
@@ -491,19 +492,19 @@ export default function Kanban() {
 
   // Fetch pipeline and stages
   const { data: pipeline } = trpc.crm.getDefaultPipeline.useQuery<Pipeline | null>();
-  const { data: stagesData, refetch: refetchStages } = trpc.crm.getStagesByPipeline.useQuery<Stage[]>({
-    pipelineId: pipeline?.id || 0,
-    enabled: !!pipeline?.id,
-  });
+  const { data: stagesData, refetch: refetchStages } = trpc.crm.getStagesByPipeline.useQuery<Stage[]>(
+    { pipelineId: pipeline?.id || 0 },
+    { enabled: !!pipeline?.id }
+  );
 
   // Fetch leads for pipeline
-  const { data: leadsData, refetch: refetchLeads } = trpc.crm.listLeadsByPipeline.useQuery<Lead[]>({
-    pipelineId: pipeline?.id || 0,
-    enabled: !!pipeline?.id,
-  });
+  const { data: leadsData, refetch: refetchLeads } = trpc.crm.listLeadsByPipeline.useQuery<Lead[]>(
+    { pipelineId: pipeline?.id || 0 },
+    { enabled: !!pipeline?.id }
+  );
 
   // Fetch users for assignee filter
-  const { data: usersData } = trpc.crm.listUsers.useQuery<User[]>({ enabled: true });
+  const { data: usersData } = trpc.crm.listUsers.useQuery<User[]>(undefined, { enabled: true });
 
   // Mutations
   const moveLeadMutation = trpc.crm.moveLeadToStage.useMutation({
@@ -560,19 +561,19 @@ export default function Kanban() {
       stages.forEach((stage: Stage) => {
         grouped[stage.id] = [];
       });
-      
+
       // Extract all unique tags
       const tagSet = new Set<string>();
-      
+
       leadsData.forEach((lead: Lead) => {
         if (grouped[lead.stageId]) {
           grouped[lead.stageId].push(lead);
         }
         lead.tags?.forEach(tag => tagSet.add(tag));
       });
-      
+
       setAllTags(Array.from(tagSet).sort());
-      
+
       setLeadsByStage(grouped);
       setStages(prev =>
         prev.map((stage: Stage) => ({
@@ -586,7 +587,7 @@ export default function Kanban() {
   // Filter leads
   const getFilteredLeads = useCallback((stageId: number) => {
     let leads = leadsByStage[stageId] || [];
-    
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       leads = leads.filter(lead =>
@@ -596,17 +597,17 @@ export default function Kanban() {
         lead.tags?.some(tag => tag.toLowerCase().includes(term))
       );
     }
-    
+
     if (selectedAssignee === "unassigned") {
       leads = leads.filter(lead => !lead.assignedToUserId);
     } else if (selectedAssignee) {
       leads = leads.filter(lead => lead.assignedToUserId === selectedAssignee);
     }
-    
+
     if (selectedTag) {
       leads = leads.filter(lead => lead.tags?.includes(selectedTag));
     }
-    
+
     return leads;
   }, [leadsByStage, searchTerm, selectedAssignee, selectedTag]);
 
@@ -691,7 +692,7 @@ export default function Kanban() {
               </div>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={selectedAssignee || ""} onValueChange={v => setSelectedAssignee(v || null)}>
+                <Select value={selectedAssignee === null ? "" : String(selectedAssignee === "unassigned" ? "unassigned" : selectedAssignee)} onValueChange={v => setSelectedAssignee(v ? (v === "unassigned" ? "unassigned" : Number(v)) : null)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Responsável" />
                   </SelectTrigger>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
+import { getWAHAClient } from "../waha-client";
 import {
   getOrCreateConversation,
   getConversationById,
@@ -12,6 +13,7 @@ import {
   listNotesByConversation,
   createAuditLog,
   getContactById,
+  listWhatsAppSessions,
 } from "../db";
 
 export const conversationsRouter = router({
@@ -171,13 +173,70 @@ export const conversationsRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
+        const conversation = await getConversationById(input.conversationId);
+        const contact = conversation?.contactId
+          ? await getContactById(conversation.contactId)
+          : null;
+
         const message = await createMessage(
           input.conversationId,
           input.type,
           input.content,
           input.mediaUrl,
-          ctx.user?.id
+          ctx.user?.id,
+          contact?.whatsappNumber
         );
+
+        // Dispara mensagem via WAHA se houver número de WhatsApp do contato
+        if (contact?.whatsappNumber) {
+          try {
+            const wahaClient = await getWAHAClient();
+            const activeSessions = await listWhatsAppSessions();
+            const activeSession =
+              activeSessions.find(
+                (s) => s.status === "connected" || s.status === "connecting"
+              ) || activeSessions[0];
+
+            if (activeSession) {
+              const chatId = contact.whatsappNumber.includes("@")
+                ? contact.whatsappNumber
+                : `${contact.whatsappNumber}@c.us`;
+
+              if (input.type === "text" && input.content) {
+                await wahaClient.sendMessage(
+                  activeSession.sessionName,
+                  chatId,
+                  input.content
+                );
+              } else if (input.mediaUrl) {
+                await wahaClient.sendMediaMessage(
+                  activeSession.sessionName,
+                  chatId,
+                  input.mediaUrl,
+                  input.type as any,
+                  input.content
+                );
+              }
+            }
+          } catch (err) {
+            console.error("[Conversations] Erro ao enviar mensagem via WAHA:", err);
+          }
+        }
+
+        // Transmite atualização via WebSocket
+        if (typeof (global as any).broadcastToConversation === "function") {
+          (global as any).broadcastToConversation(input.conversationId, {
+            type: "new_message",
+            conversationId: input.conversationId,
+            message,
+          });
+        }
+        if (typeof (global as any).broadcastToAll === "function") {
+          (global as any).broadcastToAll({
+            type: "conversation_updated",
+            conversationId: input.conversationId,
+          });
+        }
 
         await createAuditLog(
           ctx.user?.id,

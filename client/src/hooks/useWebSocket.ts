@@ -10,8 +10,22 @@ export function useWebSocket(userId: number | null, onMessage?: MessageHandler) 
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 
+  const onMessageRef = useRef(onMessage);
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
   const connect = useCallback(() => {
     if (!userId) return;
+
+    // Avoid reopening if already open or connecting
+    if (
+      wsRef.current &&
+      (wsRef.current.readyState === WebSocket.OPEN ||
+        wsRef.current.readyState === WebSocket.CONNECTING)
+    ) {
+      return;
+    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -24,7 +38,7 @@ export function useWebSocket(userId: number | null, onMessage?: MessageHandler) 
         console.log("[WS] Connected");
         setIsConnected(true);
         reconnectAttempts.current = 0;
-        
+
         // Authenticate
         ws.send(JSON.stringify({ type: "auth", userId }));
       };
@@ -33,7 +47,7 @@ export function useWebSocket(userId: number | null, onMessage?: MessageHandler) 
         try {
           const message = JSON.parse(event.data);
           setLastMessage(message);
-          onMessage?.(message);
+          onMessageRef.current?.(message);
         } catch (error) {
           console.error("[WS] Error parsing message:", error);
         }
@@ -42,11 +56,14 @@ export function useWebSocket(userId: number | null, onMessage?: MessageHandler) 
       ws.onclose = () => {
         console.log("[WS] Disconnected");
         setIsConnected(false);
-        
+
         // Attempt reconnection
         if (reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+          const delay = Math.min(
+            1000 * Math.pow(2, reconnectAttempts.current),
+            30000
+          );
           reconnectTimeoutRef.current = setTimeout(connect, delay);
         }
       };
@@ -57,7 +74,7 @@ export function useWebSocket(userId: number | null, onMessage?: MessageHandler) 
     } catch (error) {
       console.error("[WS] Failed to create WebSocket:", error);
     }
-  }, [userId, onMessage]);
+  }, [userId]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

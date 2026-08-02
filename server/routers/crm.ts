@@ -28,6 +28,7 @@ import {
   updateLeadAssignee,
   updateLeadDueDate,
   listUsers,
+  createAuditLog,
 } from "../db";
 
 export const crmRouter = router({
