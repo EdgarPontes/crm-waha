@@ -33,6 +33,7 @@ import {
   UserPlus,
   Server,
   ShieldCheck,
+  Shield,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -51,6 +52,7 @@ const menuItems = [
   { label: "Usuários", path: "/user-management", icon: ShieldCheck },
   { label: "WhatsApp", path: "/whatsapp-sessions", icon: Smartphone },
   { label: "Config. WAHA", path: "/waha-configurations", icon: Server },
+  { label: "Auditoria", path: "/audit-logs", icon: Shield },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

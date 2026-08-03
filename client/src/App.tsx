@@ -16,6 +16,7 @@ import UserManagement from "./pages/UserManagement";
 import WhatsAppSessions from "./pages/WhatsAppSessions";
 import WAHAConfigurations from "./pages/WAHAConfigurations";
 import Contacts from "./pages/Contacts";
+import AuditLogs from "./pages/AuditLogs";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { useAuth } from "./_core/hooks/useAuth";
@@ -183,6 +184,14 @@ function Router() {
         component={() => (
           <ProtectedRoute>
             <Contacts />
+          </ProtectedRoute>
+        )}
+      />
+      <Route
+        path="/audit-logs"
+        component={() => (
+          <ProtectedRoute>
+            <AuditLogs />
           </ProtectedRoute>
         )}
       />

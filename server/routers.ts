@@ -12,6 +12,7 @@ import { attendanceQueueRouter } from "./routers/attendance";
 import { automationRouter } from "./routers/automation";
 import { tagsRouter } from "./routers/tags";
 import { usersRouter } from "./routers/users";
+import { auditRouter } from "./routers/audit";
 
 export const appRouter = router({
   system: systemRouter,
@@ -29,6 +30,7 @@ export const appRouter = router({
   attendance: attendanceQueueRouter,
   automation: automationRouter,
   tags: tagsRouter,
+  audit: auditRouter,
 });
 
 export type AppRouter = typeof appRouter;

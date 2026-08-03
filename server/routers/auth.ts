@@ -8,6 +8,7 @@ import {
   updateUserPassword,
   updateUserLastSignedIn,
   setUserEmailVerified,
+  createAuditLog,
 } from "../db";
 import { SignJWT, jwtVerify } from "jose";
 import { ENV } from "../_core/env";
@@ -119,6 +120,9 @@ export const authRouter = router({
       // Update last signed in
       await updateUserLastSignedIn(user.id);
 
+      // Audit: login
+      await createAuditLog(user.id, "login", "user", user.id);
+
       return {
         user: {
           id: user.id,
@@ -132,7 +136,10 @@ export const authRouter = router({
     }),
 
   // Logout user
-  logout: publicProcedure.mutation(({ ctx }) => {
+  logout: protectedProcedure.mutation(async ({ ctx }) => {
+    if (ctx.user) {
+      await createAuditLog(ctx.user.id, "logout", "user", ctx.user.id);
+    }
     ctx.res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
       secure: ENV.isProduction,

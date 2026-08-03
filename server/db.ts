@@ -1966,12 +1966,32 @@ export async function listActiveAutomations() {
 export async function listAuditLogs(
   limit = 100,
   offset = 0,
-  filters?: { userId?: number; action?: string; entityType?: string }
+  filters?: {
+    userId?: number;
+    action?: string;
+    entityType?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }
 ) {
   const db = await getDb();
   if (!db) return [];
 
-  let query = db.select().from(auditLogs).$dynamic();
+  let query = db
+    .select({
+      id: auditLogs.id,
+      userId: auditLogs.userId,
+      userName: users.name,
+      userEmail: users.email,
+      action: auditLogs.action,
+      entityType: auditLogs.entityType,
+      entityId: auditLogs.entityId,
+      changes: auditLogs.changes,
+      createdAt: auditLogs.createdAt,
+    })
+    .from(auditLogs)
+    .leftJoin(users, eq(auditLogs.userId, users.id))
+    .$dynamic();
 
   if (filters?.userId) {
     query = query.where(eq(auditLogs.userId, filters.userId)) as any;
@@ -1984,11 +2004,64 @@ export async function listAuditLogs(
       eq(auditLogs.entityType, filters.entityType as any)
     ) as any;
   }
+  if (filters?.startDate) {
+    query = query.where(
+      sql`${auditLogs.createdAt} >= ${filters.startDate.toISOString()}`
+    ) as any;
+  }
+  if (filters?.endDate) {
+    query = query.where(
+      sql`${auditLogs.createdAt} <= ${filters.endDate.toISOString()}`
+    ) as any;
+  }
 
   return await query
     .orderBy(desc(auditLogs.createdAt))
     .limit(limit)
     .offset(offset);
+}
+
+export async function countAuditLogs(
+  filters?: {
+    userId?: number;
+    action?: string;
+    entityType?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }
+) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  let query = db
+    .select({ count: sql<number>`count(*)` })
+    .from(auditLogs)
+    .$dynamic();
+
+  if (filters?.userId) {
+    query = query.where(eq(auditLogs.userId, filters.userId)) as any;
+  }
+  if (filters?.action) {
+    query = query.where(eq(auditLogs.action, filters.action as any)) as any;
+  }
+  if (filters?.entityType) {
+    query = query.where(
+      eq(auditLogs.entityType, filters.entityType as any)
+    ) as any;
+  }
+  if (filters?.startDate) {
+    query = query.where(
+      sql`${auditLogs.createdAt} >= ${filters.startDate.toISOString()}`
+    ) as any;
+  }
+  if (filters?.endDate) {
+    query = query.where(
+      sql`${auditLogs.createdAt} <= ${filters.endDate.toISOString()}`
+    ) as any;
+  }
+
+  const result = await query;
+  return Number(result[0]?.count ?? 0);
 }
 
 // ============================================================================

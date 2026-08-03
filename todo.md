@@ -186,17 +186,17 @@
 
 ## Fase 12: Auditoria e Segurança
 
-- [ ] Criar schema para AuditLogs
-- [ ] Implementar logging de login
-- [ ] Implementar logging de logout
-- [ ] Implementar logging de alterações
-- [ ] Implementar logging de transferências
-- [ ] Implementar logging de movimentações Kanban
-- [ ] Implementar logging de mensagens enviadas
-- [ ] Implementar logging de mensagens recebidas
-- [ ] Criar interface de visualização de auditoria
-- [ ] Implementar filtros em auditoria
-- [ ] Criar testes para auditoria
+- [x] Criar schema para AuditLogs
+- [x] Implementar logging de login
+- [x] Implementar logging de logout
+- [x] Implementar logging de alterações
+- [x] Implementar logging de transferências
+- [x] Implementar logging de movimentações Kanban
+- [x] Implementar logging de mensagens enviadas
+- [x] Implementar logging de mensagens recebidas
+- [x] Criar interface de visualização de auditoria
+- [x] Implementar filtros em auditoria
+- [x] Criar testes para auditoria
 
 ## Fase 13: Gerenciamento de Usuários
 
