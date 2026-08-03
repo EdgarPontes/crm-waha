@@ -219,11 +219,11 @@
 
 ## Fase 15: Documentação e Deploy
 
-- [ ] Documentar API com Swagger
-- [ ] Documentar fluxos principais
-- [ ] Documentar configuração de WAHA
-- [ ] Documentar configuração de IA
-- [ ] Criar guia de deploy
-- [ ] Criar guia de instalação
-- [ ] Preparar Docker Compose
-- [ ] Testar deploy em ambiente de produção
+- [x] Documentar API com Swagger
+- [x] Documentar fluxos principais
+- [x] Documentar configuração de WAHA
+- [x] Documentar configuração de IA
+- [x] Criar guia de deploy
+- [x] Criar guia de instalação
+- [x] Preparar Docker Compose
+- [x] Testar deploy em ambiente de produção

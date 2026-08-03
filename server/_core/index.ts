@@ -5,10 +5,12 @@ import net from "net";
 import cors from "cors";
 import { WebSocketServer, WebSocket } from "ws";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import swaggerUi from "swagger-ui-express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { handleWahaWebhook } from "../waha-webhook";
 import { startSessionMonitor } from "../waha-monitor";
+import { openApiSpec } from "../openapi";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -54,6 +56,14 @@ async function startServer() {
       createContext,
     })
   );
+
+  // Swagger API Documentation
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+
+  // OpenAPI JSON spec endpoint
+  app.get("/api/openapi.json", (_req, res) => {
+    res.json(openApiSpec);
+  });
 
   // WebSocket server for real-time updates
   const wss = new WebSocketServer({ server, path: "/ws" });
@@ -140,6 +150,7 @@ async function startServer() {
 
   server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
+    console.log(`API Docs (Swagger): http://localhost:${port}/api/docs`);
 
     // Start WAHA session monitor
     startSessionMonitor();

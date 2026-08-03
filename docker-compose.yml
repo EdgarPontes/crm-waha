@@ -1,4 +1,48 @@
 services:
+  # Banco de Dados PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: crm-waha-db
+    environment:
+      POSTGRES_DB: crm_waha
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-crm_waha_segura_2025}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - crm-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm_user -d crm_waha"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # WhatsApp HTTP API (WAHA)
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: crm-waha-waha
+    ports:
+      - "3001:3000"
+    environment:
+      - WAHA_MEDIA_STORAGE=/waha-media
+      - WAHA_API_KEY=${WAHA_API_KEY:-}
+      - WAHA_SWAGGER_ENABLED=false
+    volumes:
+      - waha-media:/waha-media
+    networks:
+      - crm-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # Aplicação CRM Omnichannel WAHA
   app:
     build:
@@ -8,36 +52,34 @@ services:
     ports:
       - "9000:9000"
     environment:
-      # Banco de dados externo - Configure com suas credenciais
-      # CUSTOM_DB_TYPE: ${DB_TYPE:-mysql}
-      # CUSTOM_DB_HOST: ${DB_HOST:-localhost}
-      # CUSTOM_DB_PORT: ${DB_PORT:-3306}
-      # CUSTOM_DB_USER: ${DB_USER:-crm_user}
-      # CUSTOM_DB_PASSWORD: ${DB_PASSWORD:-senha_segura}
-      # CUSTOM_DB_NAME: ${DB_NAME:-crm_waha}
-
-      # Alternativa: usar URL de conexão completa
-      CUSTOM_DB_URL: ${DATABASE_URL}
+      # Conexão com PostgreSQL (interno)
+      DATABASE_URL: postgresql://crm_user:${DB_PASSWORD:-crm_waha_segura_2025}@db:5432/crm_waha
       CUSTOM_DB_TYPE: postgres
 
-      # Configurações WAHA (opcional)
-      WAHA_API_URL: ${WAHA_API_URL:-http://localhost:3001}
-      WAHA_API_KEY: ${WAHA_API_KEY}
+      # WAHA
+      WAHA_API_URL: ${WAHA_API_URL:-http://waha:3000}
+      WAHA_API_KEY: ${WAHA_API_KEY:-}
 
-      # Configurações de IA (opcional)
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      CLAUDE_API_KEY: ${CLAUDE_API_KEY}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # IA (opcional)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
 
-      # Título e logo da aplicação
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-random-secret-in-production}
+
+      # Aplicação
       VITE_APP_TITLE: ${VITE_APP_TITLE:-CRM Omnichannel WAHA}
-      VITE_APP_LOGO: ${VITE_APP_LOGO}
-
-      # Node environment
+      VITE_APP_LOGO: ${VITE_APP_LOGO:-}
       NODE_ENV: production
       PORT: "9000"
 
-    # Verificar saúde da aplicação
+    depends_on:
+      db:
+        condition: service_healthy
+      waha:
+        condition: service_started
+
     healthcheck:
       test:
         [
@@ -53,10 +95,8 @@ services:
       retries: 3
       start_period: 40s
 
-    # Reiniciar automaticamente se falhar
     restart: unless-stopped
 
-    # Limites de recursos (opcional)
     deploy:
       resources:
         limits:
@@ -66,13 +106,15 @@ services:
           cpus: "1"
           memory: 512M
 
-    # Volumes para logs
     volumes:
       - ./logs:/app/.manus-logs
 
-    # Redes
     networks:
       - crm-network
+
+volumes:
+  pgdata:
+  waha-media:
 
 networks:
   crm-network:
