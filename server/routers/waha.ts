@@ -49,11 +49,10 @@ export const wahaRouter = router({
 
       // Mescla: para cada sessão do banco, atualiza status com base na WAHA
       if (db && wahaSessions.length > 0) {
-        for (const ws of wahaSessions) {
+        const updates = wahaSessions.map((ws) => {
           const mappedStatus = WAHA_STATUS_MAP[ws?.status] || "connecting";
           const phoneNumber = ws?.me?.id || "";
-          // Atualiza o banco se houver mudança de status ou telefone
-          await db
+          return db
             .update(whatsappSessions)
             .set({
               status: mappedStatus,
@@ -64,7 +63,8 @@ export const wahaRouter = router({
             .catch((err: unknown) =>
               console.error("[Router] Falha ao atualizar sessão no banco:", err)
             );
-        }
+        });
+        await Promise.all(updates);
       }
 
       // Retorna lista unificada: sessões do banco prevalecem, complementadas pelas da WAHA

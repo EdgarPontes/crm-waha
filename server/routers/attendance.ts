@@ -5,6 +5,7 @@ import {
   getAttendanceQueueItem,
   listAttendanceQueue,
   assignQueueItem,
+  getQueueStats,
 } from "../db";
 import { createAuditLog, updateConversationStatus, listUsers } from "../db";
 
@@ -164,24 +165,23 @@ export const attendanceQueueRouter = router({
 
   // Get queue stats for supervisor
   getStats: protectedProcedure.query(async () => {
-    const all = await listAttendanceQueue();
-    const waiting = all.filter((q: any) => q.status === "waiting");
-    const assigned = all.filter((q: any) => q.status === "assigned");
-    const inProgress = all.filter((q: any) => q.status === "in_progress");
+    const stats = await getQueueStats();
 
-    // Average wait time
-    const now = Date.now();
-    const waitTimes = waiting.map((q: any) => now - new Date(q.requestedAt).getTime());
-    const avgWaitTime = waitTimes.length > 0
-      ? waitTimes.reduce((a: number, b: number) => a + b, 0) / waitTimes.length
-      : 0;
+    // Calculate average wait time for waiting items
+    let avgWaitTimeMs = 0;
+    const waitingItems = await listAttendanceQueue("waiting", undefined, 1000, 0);
+    if (waitingItems.length > 0) {
+      const now = Date.now();
+      const waitTimes = waitingItems.map((q: any) => now - new Date(q.requestedAt).getTime());
+      avgWaitTimeMs = waitTimes.reduce((a: number, b: number) => a + b, 0) / waitTimes.length;
+    }
 
     return {
-      total: all.length,
-      waiting: waiting.length,
-      assigned: assigned.length,
-      inProgress: inProgress.length,
-      avgWaitTimeMs: avgWaitTime,
+      total: stats.waiting + stats.assigned + stats.inProgress + stats.closed,
+      waiting: stats.waiting,
+      assigned: stats.assigned,
+      inProgress: stats.inProgress,
+      avgWaitTimeMs,
     };
   }),
 });

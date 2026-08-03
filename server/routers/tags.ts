@@ -56,7 +56,7 @@ export const tagsRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const original = await getTagByName(input.name || "");
+      const original = input.name ? await getTagByName(input.name) : null;
       const updated = await updateTag(input.id, {
         name: input.name,
         color: input.color,

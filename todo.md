@@ -48,7 +48,7 @@
 - [x] Implementar envio de vídeos
 - [x] Implementar envio de documentos
 - [x] Implementar envio de localização
-- [ ] Criar testes para integração WAHA
+- [x] Criar testes para integração WAHA
 
 ## Fase 3: CRM Base - Contatos e Leads
 
@@ -61,7 +61,7 @@
 - [x] Criar procedures para atualizar leads
 - [x] Implementar busca e filtros de contatos
 - [x] Implementar busca e filtros de leads
-- [ ] Criar testes para CRM base
+- [x] Criar testes para CRM base
 
 ## Fase 4: Tela de Conversação
 
@@ -93,7 +93,7 @@
 - [x] Adicionar datas de vencimento aos cards
 - [x] Implementar visualização de lead ao clicar no card
 - [x] Registrar movimentações em AuditLogs
-- [ ] Criar testes para Kanban
+- [x] Criar testes para Kanban
 
 ## Fase 6: IA Conversacional
 
@@ -111,7 +111,7 @@
 - [x] Implementar busca de contexto do cliente
 - [x] Implementar envio de resposta via WAHA
 - [x] Implementar detecção de handoff (cliente pediu humano, reclamação, etc)
-- [ ] Criar testes para IA
+- [x] Criar testes para IA
 
 ## Fase 7: Base de Conhecimento (RAG)
 
@@ -126,7 +126,7 @@
 - [x] Implementar busca semântica na base de conhecimento
 - [x] Integrar RAG com IA conversacional
 - [x] Implementar interface de gerenciamento de documentos
-- [ ] Criar testes para RAG
+- [x] Criar testes para RAG
 
 ## Fase 8: Atendimento Humano
 
@@ -140,7 +140,7 @@
 - [x] Implementar visualização de fila para supervisor
 - [x] Implementar reativação de IA pelo atendente
 - [x] Implementar encerramento de conversa
-- [ ] Criar testes para atendimento humano
+- [x] Criar testes para atendimento humano
 
 ## Fase 9: Sistema de Automações
 
@@ -156,7 +156,7 @@
 - [x] Implementar engine de execução de automações
 - [x] Integrar automações ao webhook WAHA
 - [x] Integrar automações ao router tRPC
-- [ ] Implementar testes para automações
+- [x] Implementar testes para automações
 
 ## Fase 10: Sistema de Tags
 
@@ -167,7 +167,7 @@
 - [x] Implementar router tRPC para tags
 - [x] Implementar filtro por tags no Kanban
 - [x] Implementar filtro por tags na lista de conversas
-- [ ] Criar testes para tags
+- [x] Criar testes para tags
 
 ## Fase 11: Dashboard e Métricas
 
@@ -208,14 +208,14 @@
 
 ## Fase 14: Testes e Otimizações
 
-- [ ] Executar testes unitários completos
-- [ ] Executar testes de integração
-- [ ] Otimizar queries do banco de dados
-- [ ] Adicionar índices necessários
-- [ ] Implementar caching onde necessário
-- [ ] Testar performance com múltiplas conversas
-- [ ] Testar performance com múltiplas sessões WhatsApp
-- [ ] Testar WebSocket com múltiplos usuários
+- [x] Executar testes unitários completos
+- [x] Executar testes de integração
+- [x] Otimizar queries do banco de dados
+- [x] Adicionar índices necessários
+- [x] Implementar caching onde necessário
+- [x] Testar performance com múltiplas conversas
+- [x] Testar performance com múltiplas sessões WhatsApp
+- [x] Testar WebSocket com múltiplos usuários
 
 ## Fase 15: Documentação e Deploy
 

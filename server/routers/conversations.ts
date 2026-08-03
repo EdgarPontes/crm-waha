@@ -39,16 +39,12 @@ export const conversationsRouter = router({
       const conversation = await getConversationById(input.id);
       if (!conversation) return null;
 
-      // Fetch contact details
-      const contact = conversation.contactId
-        ? await getContactById(conversation.contactId)
-        : null;
-
-      // Fetch messages
-      const messages = await listMessagesByConversation(input.id, 50, 0);
-
-      // Fetch notes
-      const notes = await listNotesByConversation(input.id);
+      // Fetch contact, messages, and notes in parallel
+      const [contact, messages, notes] = await Promise.all([
+        conversation.contactId ? getContactById(conversation.contactId) : Promise.resolve(null),
+        listMessagesByConversation(input.id, 50, 0),
+        listNotesByConversation(input.id),
+      ]);
 
       return {
         ...conversation,
@@ -194,7 +190,7 @@ export const conversationsRouter = router({
             const activeSessions = await listWhatsAppSessions();
             const activeSession =
               activeSessions.find(
-                (s) => s.status === "connected" || s.status === "connecting"
+                (s: { status: string; sessionName: string }) => s.status === "connected" || s.status === "connecting"
               ) || activeSessions[0];
 
             if (activeSession) {

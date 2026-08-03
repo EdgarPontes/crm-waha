@@ -153,18 +153,18 @@ export const crmRouter = router({
     .input(
       z.object({
         id: z.number(),
-        name: z.string().optional(),
-        phone: z.string().optional(),
-        email: z.string().email().optional(),
         notes: z.string().optional(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
+        dueDate: z.date().nullable().optional(),
+        tags: z.array(z.string()).optional(),
+        assignedToUserId: z.number().nullable().optional(),
       })
     )
     .mutation(async ({ input }) => {
-      // @ts-ignore - TypeScript incorrectly infers argument count
       return updateLead(input.id, {
         notes: input.notes,
-        metadata: input.metadata,
+        dueDate: input.dueDate,
+        tags: input.tags,
+        assignedToUserId: input.assignedToUserId,
       });
     }),
 

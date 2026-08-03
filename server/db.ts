@@ -774,7 +774,7 @@ export async function listConversations(
     : await query;
 
   return await Promise.all(
-    convList.map(async (conv) => {
+    convList.map(async (conv: { contactId: number | null; [key: string]: unknown }) => {
       const contact = conv.contactId
         ? await getContactById(conv.contactId)
         : null;
@@ -1650,17 +1650,17 @@ export async function listLeadsByPipeline(pipelineId: number) {
 
   if (stageIds.length === 0) return [];
 
-  return await db.select().from(leads).orderBy(asc(leads.createdAt));
+  return await db
+    .select()
+    .from(leads)
+    .where(sql`${leads.stageId} IN (${stageIds.join(",")})`)
+    .orderBy(asc(leads.createdAt));
 }
 
 export async function updateLead(
   id: number,
   data: {
-    name?: string;
-    phone?: string;
-    email?: string;
     notes?: string;
-    metadata?: Record<string, unknown>;
     dueDate?: Date | null;
     tags?: string[];
     assignedToUserId?: number | null;
@@ -1670,11 +1670,7 @@ export async function updateLead(
   if (!db) return null;
 
   const updateData: Record<string, unknown> = {};
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.phone !== undefined) updateData.phone = data.phone;
-  if (data.email !== undefined) updateData.email = data.email;
   if (data.notes !== undefined) updateData.notes = data.notes;
-  if (data.metadata !== undefined) updateData.metadata = data.metadata;
   if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
   if (data.tags !== undefined) updateData.tags = data.tags;
   if (data.assignedToUserId !== undefined) updateData.assignedToUserId = data.assignedToUserId;
