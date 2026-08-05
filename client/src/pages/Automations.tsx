@@ -167,7 +167,7 @@ export default function Automations() {
 
         {/* Form */}
         {showForm && (
-          <Card className="border-blue-200 bg-blue-50">
+          <Card>
             <CardHeader>
               <CardTitle>
                 {editingId ? "Editar Automação" : "Criar Nova Automação"}
@@ -344,9 +344,9 @@ export default function Automations() {
         </div>
 
         {/* Info Card */}
-        <Card className="bg-amber-50 border-amber-200">
+        <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-amber-900">
+            <p className="text-sm text-sidebar-foreground">
               <strong>💡 Exemplos de Automações:</strong>
               <br />
               • SE mensagem contém "preço" → ENTÃO mover para "Qualificação"

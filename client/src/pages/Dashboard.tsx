@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { useChartColors } from "@/lib/chart-colors";
 import {
   BarChart,
   Bar,
@@ -48,27 +49,36 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 
-const COLORS = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#06b6d4",
-  "#84cc16",
-  "#f97316",
-  "#6366f1",
-];
-
 type Period = "7d" | "30d" | "90d" | "365d";
 
-function getDateRange(period: Period): { startDate: Date; endDate: Date; groupBy: "day" | "week" | "month" } {
+function getDateRange(period: Period): {
+  startDate: Date;
+  endDate: Date;
+  groupBy: "day" | "week" | "month";
+} {
   const now = new Date();
-  const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const endDate = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999
+  );
 
-  const days: Record<Period, number> = { "7d": 7, "30d": 30, "90d": 90, "365d": 365 };
-  const groupBy: Record<Period, "day" | "week" | "month"> = { "7d": "day", "30d": "day", "90d": "week", "365d": "month" };
+  const days: Record<Period, number> = {
+    "7d": 7,
+    "30d": 30,
+    "90d": 90,
+    "365d": 365,
+  };
+  const groupBy: Record<Period, "day" | "week" | "month"> = {
+    "7d": "day",
+    "30d": "day",
+    "90d": "week",
+    "365d": "month",
+  };
 
   const startDate = new Date(endDate);
   startDate.setDate(startDate.getDate() - days[period]);
@@ -82,23 +92,25 @@ function MetricCard({
   value,
   subtitle,
   icon: Icon,
-  color,
 }: {
   title: string;
   value: number | string;
   subtitle: string;
   icon: React.ElementType;
-  color: string;
 }) {
   return (
-    <Card>
+    <Card className="bg-sidebar border-sidebar-border">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4" style={{ color }} />
+        <CardTitle className="text-sm font-medium text-sidebar-foreground">
+          {title}
+        </CardTitle>
+        <Icon className="h-4 w-4 text-primary" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+        <div className="text-2xl font-bold text-sidebar-foreground">
+          {value}
+        </div>
+        <p className="text-xs text-sidebar-foreground/70">{subtitle}</p>
       </CardContent>
     </Card>
   );
@@ -107,26 +119,41 @@ function MetricCard({
 export default function Dashboard() {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>("30d");
-  const { startDate, endDate, groupBy } = useMemo(() => getDateRange(period), [period]);
+  const { startDate, endDate, groupBy } = useMemo(
+    () => getDateRange(period),
+    [period]
+  );
 
-  const { data: metrics, isLoading } = trpc.dashboard.metrics.useQuery({ startDate, endDate });
-  const { data: salesByPeriod, isLoading: salesLoading } = trpc.dashboard.salesByPeriod.useQuery({
+  const { data: metrics, isLoading } = trpc.dashboard.metrics.useQuery({
     startDate,
     endDate,
-    groupBy,
   });
+  const { data: salesByPeriod, isLoading: salesLoading } =
+    trpc.dashboard.salesByPeriod.useQuery({
+      startDate,
+      endDate,
+      groupBy,
+    });
   const { data: conversationsByPeriod, isLoading: convPeriodLoading } =
-    trpc.dashboard.conversationsByPeriod.useQuery({ startDate, endDate, groupBy });
-  const { data: agentMetrics, isLoading: agentLoading } = trpc.dashboard.agentMetrics.useQuery({
-    startDate,
-    endDate,
-  });
-  const { data: aiMetrics, isLoading: aiLoading } = trpc.dashboard.aiMetrics.useQuery({
-    startDate,
-    endDate,
-  });
+    trpc.dashboard.conversationsByPeriod.useQuery({
+      startDate,
+      endDate,
+      groupBy,
+    });
+  const { data: agentMetrics, isLoading: agentLoading } =
+    trpc.dashboard.agentMetrics.useQuery({
+      startDate,
+      endDate,
+    });
+  const { data: aiMetrics, isLoading: aiLoading } =
+    trpc.dashboard.aiMetrics.useQuery({
+      startDate,
+      endDate,
+    });
 
-  const isLoadingAny = isLoading || salesLoading || convPeriodLoading || agentLoading || aiLoading;
+  const isLoadingAny =
+    isLoading || salesLoading || convPeriodLoading || agentLoading || aiLoading;
+  const colors = useChartColors();
 
   return (
     <DashboardLayout>
@@ -136,10 +163,11 @@ export default function Dashboard() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              Bem-vindo, {user?.name || "Usuário"}! Aqui está um resumo do seu CRM.
+              Bem-vindo, {user?.name || "Usuário"}! Aqui está um resumo do seu
+              CRM.
             </p>
           </div>
-          <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
+          <Select value={period} onValueChange={v => setPeriod(v as Period)}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Período" />
             </SelectTrigger>
@@ -156,8 +184,8 @@ export default function Dashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {isLoadingAny ? (
             <>
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
+              {[1, 2, 3, 4].map(i => (
+                <Card key={i} className="bg-sidebar border-sidebar-border">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <Skeleton className="h-4 w-24" />
                     <Skeleton className="h-4 w-4 rounded-full" />
@@ -176,28 +204,24 @@ export default function Dashboard() {
                 value={metrics?.conversations?.active ?? 0}
                 subtitle={`${metrics?.conversations?.waitingHuman ?? 0} aguardando atendente`}
                 icon={MessageSquare}
-                color="#3b82f6"
               />
               <MetricCard
                 title="Leads Totais"
                 value={metrics?.leads?.total ?? 0}
                 subtitle={`${metrics?.leads?.won ?? 0} convertidos`}
                 icon={Users}
-                color="#10b981"
               />
               <MetricCard
                 title="Taxa de Conversão"
                 value={`${metrics?.leads?.conversionRate ?? 0}%`}
                 subtitle="Último período"
                 icon={TrendingUp}
-                color="#f59e0b"
               />
               <MetricCard
                 title="Tempo Médio Resposta"
                 value={`${metrics?.avgResponseTime ?? 0}m`}
                 subtitle="Minutos"
                 icon={Clock}
-                color="#8b5cf6"
               />
             </>
           )}
@@ -208,7 +232,9 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Vendas por Período</CardTitle>
-              <CardDescription>Leads criados vs convertidos vs perdidos</CardDescription>
+              <CardDescription>
+                Leads criados vs convertidos vs perdidos
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {salesLoading ? (
@@ -222,9 +248,27 @@ export default function Dashboard() {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line type="monotone" dataKey="created" stroke="#3b82f6" name="Criados" strokeWidth={2} />
-                      <Line type="monotone" dataKey="won" stroke="#10b981" name="Ganhos" strokeWidth={2} />
-                      <Line type="monotone" dataKey="lost" stroke="#ef4444" name="Perdidos" strokeWidth={2} />
+                      <Line
+                        type="monotone"
+                        dataKey="created"
+                        stroke={colors.chart2}
+                        name="Criados"
+                        strokeWidth={2}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="won"
+                        stroke={colors.success}
+                        name="Ganhos"
+                        strokeWidth={2}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="lost"
+                        stroke={colors.destructive}
+                        name="Perdidos"
+                        strokeWidth={2}
+                      />
                     </LineChart>
                   ) : (
                     <div className="flex items-center justify-center h-[300px] text-muted-foreground">
@@ -240,7 +284,9 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Conversas por Período</CardTitle>
-              <CardDescription>Novas conversas ao longo do tempo</CardDescription>
+              <CardDescription>
+                Novas conversas ao longo do tempo
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {convPeriodLoading ? (
@@ -253,7 +299,14 @@ export default function Dashboard() {
                       <XAxis dataKey="period" fontSize={12} />
                       <YAxis />
                       <Tooltip />
-                      <Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} name="Conversas" />
+                      <Area
+                        type="monotone"
+                        dataKey="count"
+                        stroke={colors.chart3}
+                        fill={colors.chart3}
+                        fillOpacity={0.2}
+                        name="Conversas"
+                      />
                     </AreaChart>
                   ) : (
                     <div className="flex items-center justify-center h-[300px] text-muted-foreground">
@@ -280,9 +333,11 @@ export default function Dashboard() {
           {/* Visão Geral */}
           <TabsContent value="overview" className="space-y-4 mt-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Card>
+              <Card className="bg-sidebar border-sidebar-border">
                 <CardHeader>
-                  <CardTitle>Resumo de Conversas</CardTitle>
+                  <CardTitle className="text-sidebar-foreground">
+                    Resumo de Conversas
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isLoadingAny ? (
@@ -294,29 +349,47 @@ export default function Dashboard() {
                   ) : (
                     <>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Ativas</span>
-                        <span className="font-bold text-blue-500">{metrics?.conversations?.active ?? 0}</span>
+                        <span className="text-sidebar-foreground/70">
+                          Ativas
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.conversations?.active ?? 0}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Aguardando Humano</span>
-                        <span className="font-bold text-yellow-500">{metrics?.conversations?.waitingHuman ?? 0}</span>
+                        <span className="text-sidebar-foreground/70">
+                          Aguardando Humano
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.conversations?.waitingHuman ?? 0}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Encerradas</span>
-                        <span className="font-bold text-green-500">{metrics?.conversations?.closed ?? 0}</span>
+                        <span className="text-sidebar-foreground/70">
+                          Encerradas
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.conversations?.closed ?? 0}
+                        </span>
                       </div>
-                      <div className="flex justify-between border-t pt-2">
-                        <span className="text-muted-foreground font-semibold">Total</span>
-                        <span className="font-bold">{metrics?.conversations?.total ?? 0}</span>
+                      <div className="flex justify-between border-t border-sidebar-border pt-2">
+                        <span className="text-sidebar-foreground/70 font-semibold">
+                          Total
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.conversations?.total ?? 0}
+                        </span>
                       </div>
                     </>
                   )}
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-sidebar border-sidebar-border">
                 <CardHeader>
-                  <CardTitle>Resumo de Leads</CardTitle>
+                  <CardTitle className="text-sidebar-foreground">
+                    Resumo de Leads
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isLoadingAny ? (
@@ -328,20 +401,38 @@ export default function Dashboard() {
                   ) : (
                     <>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Total de Leads</span>
-                        <span className="font-bold">{metrics?.leads?.total ?? 0}</span>
+                        <span className="text-sidebar-foreground/70">
+                          Total de Leads
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.leads?.total ?? 0}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Ganhos</span>
-                        <span className="font-bold text-green-500"><CheckCircle2 className="h-4 w-4 inline mr-1" />{metrics?.leads?.won ?? 0}</span>
+                        <span className="text-sidebar-foreground/70">
+                          Ganhos
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          <CheckCircle2 className="h-4 w-4 inline mr-1 text-sidebar-foreground/70" />
+                          {metrics?.leads?.won ?? 0}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Perdidos</span>
-                        <span className="font-bold text-red-500"><PhoneMissed className="h-4 w-4 inline mr-1" />{metrics?.leads?.lost ?? 0}</span>
+                        <span className="text-sidebar-foreground/70">
+                          Perdidos
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          <PhoneMissed className="h-4 w-4 inline mr-1 text-sidebar-foreground/70" />
+                          {metrics?.leads?.lost ?? 0}
+                        </span>
                       </div>
-                      <div className="flex justify-between border-t pt-2">
-                        <span className="text-muted-foreground font-semibold">Taxa de Conversão</span>
-                        <span className="font-bold">{metrics?.leads?.conversionRate ?? 0}%</span>
+                      <div className="flex justify-between border-t border-sidebar-border pt-2">
+                        <span className="text-sidebar-foreground/70 font-semibold">
+                          Taxa de Conversão
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.leads?.conversionRate ?? 0}%
+                        </span>
                       </div>
                     </>
                   )}
@@ -366,9 +457,18 @@ export default function Dashboard() {
                       <PieChart>
                         <Pie
                           data={[
-                            { name: "Ativas", value: metrics.conversations.active },
-                            { name: "Aguardando", value: metrics.conversations.waitingHuman },
-                            { name: "Encerradas", value: metrics.conversations.closed },
+                            {
+                              name: "Ativas",
+                              value: metrics.conversations.active,
+                            },
+                            {
+                              name: "Aguardando",
+                              value: metrics.conversations.waitingHuman,
+                            },
+                            {
+                              name: "Encerradas",
+                              value: metrics.conversations.closed,
+                            },
                           ]}
                           dataKey="value"
                           cx="50%"
@@ -376,9 +476,9 @@ export default function Dashboard() {
                           outerRadius={100}
                           label={({ name, value }) => `${name}: ${value}`}
                         >
-                          <Cell fill="#3b82f6" />
-                          <Cell fill="#f59e0b" />
-                          <Cell fill="#10b981" />
+                          <Cell fill={colors.chart2} />
+                          <Cell fill={colors.warning} />
+                          <Cell fill={colors.success} />
                         </Pie>
                         <Tooltip />
                       </PieChart>
@@ -387,9 +487,11 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-sidebar border-sidebar-border">
                 <CardHeader>
-                  <CardTitle>Métricas de Resposta</CardTitle>
+                  <CardTitle className="text-sidebar-foreground">
+                    Métricas de Resposta
+                  </CardTitle>
                   <CardDescription>Tempo médio de resposta</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -401,12 +503,20 @@ export default function Dashboard() {
                   ) : (
                     <>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tempo Médio Resposta</span>
-                        <span className="font-bold">{metrics?.avgResponseTime ?? 0} minutos</span>
+                        <span className="text-sidebar-foreground/70">
+                          Tempo Médio Resposta
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.avgResponseTime ?? 0} minutos
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tempo Médio Atendimento</span>
-                        <span className="font-bold">{metrics?.avgAttendanceTime ?? 0} minutos</span>
+                        <span className="text-sidebar-foreground/70">
+                          Tempo Médio Atendimento
+                        </span>
+                        <span className="font-bold text-sidebar-foreground">
+                          {metrics?.avgAttendanceTime ?? 0} minutos
+                        </span>
                       </div>
                     </>
                   )}
@@ -421,7 +531,9 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Funil de Leads</CardTitle>
-                  <CardDescription>Criados vs Ganhos vs Perdidos</CardDescription>
+                  <CardDescription>
+                    Criados vs Ganhos vs Perdidos
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isLoadingAny ? (
@@ -430,23 +542,52 @@ export default function Dashboard() {
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={[
-                          { name: "Criados", value: metrics?.leads?.total ?? 0 },
+                          {
+                            name: "Criados",
+                            value: metrics?.leads?.total ?? 0,
+                          },
                           { name: "Ganhos", value: metrics?.leads?.won ?? 0 },
-                          { name: "Perdidos", value: metrics?.leads?.lost ?? 0 },
+                          {
+                            name: "Perdidos",
+                            value: metrics?.leads?.lost ?? 0,
+                          },
                         ]}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]}>
-                          {(metrics?.leads?.total ?? 0) > 0 && [
-                            { name: "Criados", value: metrics?.leads?.total ?? 0 },
-                            { name: "Ganhos", value: metrics?.leads?.won ?? 0 },
-                            { name: "Perdidos", value: metrics?.leads?.lost ?? 0 },
-                          ].map((_, index) => (
-                            <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                          ))}
+                        <Bar
+                          dataKey="value"
+                          fill={colors.chart2}
+                          radius={[4, 4, 0, 0]}
+                        >
+                          {(metrics?.leads?.total ?? 0) > 0 &&
+                            [
+                              {
+                                name: "Criados",
+                                value: metrics?.leads?.total ?? 0,
+                              },
+                              {
+                                name: "Ganhos",
+                                value: metrics?.leads?.won ?? 0,
+                              },
+                              {
+                                name: "Perdidos",
+                                value: metrics?.leads?.lost ?? 0,
+                              },
+                            ].map((_, index) => (
+                              <Cell
+                                key={index}
+                                fill={
+                                  [
+                                    colors.chart2,
+                                    colors.success,
+                                    colors.destructive,
+                                  ][index % 3]
+                                }
+                              />
+                            ))}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
@@ -470,9 +611,27 @@ export default function Dashboard() {
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Line type="monotone" dataKey="created" stroke="#3b82f6" name="Criados" strokeWidth={2} />
-                        <Line type="monotone" dataKey="won" stroke="#10b981" name="Ganhos" strokeWidth={2} />
-                        <Line type="monotone" dataKey="lost" stroke="#ef4444" name="Perdidos" strokeWidth={2} />
+                        <Line
+                          type="monotone"
+                          dataKey="created"
+                          stroke={colors.chart2}
+                          name="Criados"
+                          strokeWidth={2}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="won"
+                          stroke={colors.success}
+                          name="Ganhos"
+                          strokeWidth={2}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="lost"
+                          stroke={colors.destructive}
+                          name="Perdidos"
+                          strokeWidth={2}
+                        />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
@@ -502,35 +661,33 @@ export default function Dashboard() {
                     value={agentMetrics.totalAgents}
                     subtitle="Cadastrados"
                     icon={Users}
-                    color="#3b82f6"
                   />
                   <MetricCard
                     title="Atendentes Ativos"
                     value={agentMetrics.activeAgents}
                     subtitle="Com interações no período"
                     icon={HeadsetIcon}
-                    color="#10b981"
                   />
                   <MetricCard
                     title="Total Atendimentos"
                     value={agentMetrics.totalAttendances}
                     subtitle="No período"
                     icon={CheckCircle2}
-                    color="#f59e0b"
                   />
                   <MetricCard
                     title="Tempo Médio Atend."
                     value={`${agentMetrics.avgAttendanceTime}m`}
                     subtitle="Minutos"
                     icon={Clock}
-                    color="#8b5cf6"
                   />
                 </div>
 
                 <Card>
                   <CardHeader>
                     <CardTitle>Desempenho por Atendente</CardTitle>
-                    <CardDescription>Leads e atendimentos por agente</CardDescription>
+                    <CardDescription>
+                      Leads e atendimentos por agente
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={400}>
@@ -541,12 +698,32 @@ export default function Dashboard() {
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" />
-                        <YAxis type="category" dataKey="name" fontSize={12} width={90} />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          fontSize={12}
+                          width={90}
+                        />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="totalLeads" fill="#3b82f6" name="Leads" radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="wonLeads" fill="#10b981" name="Ganhos" radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="totalAttendances" fill="#f59e0b" name="Atendimentos" radius={[0, 4, 4, 0]} />
+                        <Bar
+                          dataKey="totalLeads"
+                          fill={colors.chart2}
+                          name="Leads"
+                          radius={[0, 4, 4, 0]}
+                        />
+                        <Bar
+                          dataKey="wonLeads"
+                          fill={colors.success}
+                          name="Ganhos"
+                          radius={[0, 4, 4, 0]}
+                        />
+                        <Bar
+                          dataKey="totalAttendances"
+                          fill={colors.warning}
+                          name="Atendimentos"
+                          radius={[0, 4, 4, 0]}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -566,8 +743,8 @@ export default function Dashboard() {
           <TabsContent value="ai" className="space-y-4 mt-4">
             {aiLoading ? (
               <div className="grid gap-4 md:grid-cols-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <Card key={i}>
+                {[1, 2, 3, 4].map(i => (
+                  <Card key={i} className="bg-sidebar border-sidebar-border">
                     <CardHeader className="pb-2">
                       <Skeleton className="h-4 w-24" />
                     </CardHeader>
@@ -585,42 +762,48 @@ export default function Dashboard() {
                     value={aiMetrics?.aiConversationsTotal ?? 0}
                     subtitle="Total de conversas com IA"
                     icon={Bot}
-                    color="#8b5cf6"
                   />
                   <MetricCard
                     title="IA Ativas"
                     value={aiMetrics?.activeConversations ?? 0}
                     subtitle="Conversas ativas com IA"
                     icon={Bot}
-                    color="#3b82f6"
                   />
                   <MetricCard
                     title="Mensagens Processadas"
                     value={aiMetrics?.messagesProcessed ?? 0}
                     subtitle="Mensagens respondidas pela IA"
                     icon={MessageSquare}
-                    color="#10b981"
                   />
                   <MetricCard
                     title="Handoffs"
                     value={aiMetrics?.handoffCount ?? 0}
                     subtitle="Transferências para humano"
                     icon={HeadsetIcon}
-                    color="#f59e0b"
                   />
                 </div>
 
                 <Card>
                   <CardHeader>
                     <CardTitle>Resumo de IA</CardTitle>
-                    <CardDescription>Visão geral do desempenho da IA</CardDescription>
+                    <CardDescription>
+                      Visão geral do desempenho da IA
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={[
-                          { name: "Mensagens IA", value: aiMetrics?.messagesProcessed ?? 0, fill: "#8b5cf6" },
-                          { name: "Handoffs", value: aiMetrics?.handoffCount ?? 0, fill: "#f59e0b" },
+                          {
+                            name: "Mensagens IA",
+                            value: aiMetrics?.messagesProcessed ?? 0,
+                            fill: colors.chart3,
+                          },
+                          {
+                            name: "Handoffs",
+                            value: aiMetrics?.handoffCount ?? 0,
+                            fill: colors.warning,
+                          },
                         ]}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
@@ -628,8 +811,8 @@ export default function Dashboard() {
                         <YAxis />
                         <Tooltip />
                         <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                          <Cell fill="#8b5cf6" />
-                          <Cell fill="#f59e0b" />
+                          <Cell fill={colors.chart3} />
+                          <Cell fill={colors.warning} />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>

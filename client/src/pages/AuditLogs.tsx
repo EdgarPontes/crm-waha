@@ -1,6 +1,12 @@
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -33,19 +39,20 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Search, RotateCcw, Shield, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { statusStyles } from "@/lib/status-colors";
 
 const PAGE_SIZE = 50;
 
 const actionLabels: Record<string, { label: string; color: string }> = {
-  login: { label: "Login", color: "bg-blue-100 text-blue-800" },
-  logout: { label: "Logout", color: "bg-gray-100 text-gray-800" },
-  create: { label: "Criação", color: "bg-green-100 text-green-800" },
-  update: { label: "Atualização", color: "bg-yellow-100 text-yellow-800" },
-  delete: { label: "Exclusão", color: "bg-red-100 text-red-800" },
-  move_kanban: { label: "Mov. Kanban", color: "bg-purple-100 text-purple-800" },
-  transfer_conversation: { label: "Transferência", color: "bg-orange-100 text-orange-800" },
-  send_message: { label: "Envio Msg", color: "bg-cyan-100 text-cyan-800" },
-  receive_message: { label: "Receb. Msg", color: "bg-indigo-100 text-indigo-800" },
+  login: { label: "Login", color: statusStyles.info },
+  logout: { label: "Logout", color: statusStyles.muted },
+  create: { label: "Criação", color: statusStyles.success },
+  update: { label: "Atualização", color: statusStyles.warning },
+  delete: { label: "Exclusão", color: statusStyles.danger },
+  move_kanban: { label: "Mov. Kanban", color: statusStyles.violet },
+  transfer_conversation: { label: "Transferência", color: statusStyles.orange },
+  send_message: { label: "Envio Msg", color: statusStyles.cyan },
+  receive_message: { label: "Receb. Msg", color: statusStyles.indigo },
 };
 
 const entityLabels: Record<string, string> = {
@@ -102,7 +109,8 @@ export default function AuditLogs() {
 
   const { data: filterData } = trpc.audit.filters.useQuery();
   // Only show for supervisors and admins
-  const isAuthorized = user?.role === "Administrador" || user?.role === "Supervisor";
+  const isAuthorized =
+    user?.role === "Administrador" || user?.role === "Supervisor";
 
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
 
@@ -145,14 +153,22 @@ export default function AuditLogs() {
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-3 items-end">
               <div className="flex flex-col gap-1.5 min-w-[140px]">
-                <label className="text-xs font-medium text-muted-foreground">Ação</label>
-                <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(0); }}>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Ação
+                </label>
+                <Select
+                  value={actionFilter}
+                  onValueChange={v => {
+                    setActionFilter(v);
+                    setPage(0);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
-                    {filterData?.actions?.map((a) => (
+                    {filterData?.actions?.map(a => (
                       <SelectItem key={a} value={a}>
                         {actionLabels[a]?.label ?? a}
                       </SelectItem>
@@ -162,14 +178,22 @@ export default function AuditLogs() {
               </div>
 
               <div className="flex flex-col gap-1.5 min-w-[140px]">
-                <label className="text-xs font-medium text-muted-foreground">Entidade</label>
-                <Select value={entityFilter} onValueChange={(v) => { setEntityFilter(v); setPage(0); }}>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Entidade
+                </label>
+                <Select
+                  value={entityFilter}
+                  onValueChange={v => {
+                    setEntityFilter(v);
+                    setPage(0);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
-                    {filterData?.entityTypes?.map((e) => (
+                    {filterData?.entityTypes?.map(e => (
                       <SelectItem key={e} value={e}>
                         {entityLabels[e] ?? e}
                       </SelectItem>
@@ -179,43 +203,72 @@ export default function AuditLogs() {
               </div>
 
               <div className="flex flex-col gap-1.5 min-w-[160px]">
-                <label className="text-xs font-medium text-muted-foreground">Usuário</label>
-                <Select value={userFilter} onValueChange={(v) => { setUserFilter(v); setPage(0); }}>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Usuário
+                </label>
+                <Select
+                  value={userFilter}
+                  onValueChange={v => {
+                    setUserFilter(v);
+                    setPage(0);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    {filterData?.users?.map((u: { id: number; name: string | null; email: string }) => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        {u.name ?? u.email}
-                      </SelectItem>
-                    ))}
+                    {filterData?.users?.map(
+                      (u: {
+                        id: number;
+                        name: string | null;
+                        email: string;
+                      }) => (
+                        <SelectItem key={u.id} value={String(u.id)}>
+                          {u.name ?? u.email}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Início</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Início
+                </label>
                 <Input
                   type="date"
                   value={startDate}
-                  onChange={(e) => { setStartDate(e.target.value); setPage(0); }}
+                  onChange={e => {
+                    setStartDate(e.target.value);
+                    setPage(0);
+                  }}
                   className="w-[150px]"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Fim</label>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Fim
+                </label>
                 <Input
                   type="date"
                   value={endDate}
-                  onChange={(e) => { setEndDate(e.target.value); setPage(0); }}
+                  onChange={e => {
+                    setEndDate(e.target.value);
+                    setPage(0);
+                  }}
                   className="w-[150px]"
                 />
               </div>
 
-              <Button variant="outline" size="icon" onClick={clearFilters} title="Limpar filtros">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={clearFilters}
+                title="Limpar filtros"
+              >
                 <RotateCcw className="h-4 w-4" />
               </Button>
             </div>
@@ -253,43 +306,57 @@ export default function AuditLogs() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.logs.map((log: {
-                      id: number;
-                      createdAt: string | Date | null;
-                      userName: string | null;
-                      userEmail: string | null;
-                      userId: number | null;
-                      action: string | null;
-                      entityType: string | null;
-                      entityId: number | null;
-                      changes: unknown;
-                    }) => (
-                      <TableRow key={log.id}>
-                        <TableCell className="text-xs whitespace-nowrap">
-                          {log.createdAt
-                            ? format(new Date(log.createdAt), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {log.userName ?? log.userEmail ?? (log.userId ? `ID ${log.userId}` : "-")}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={actionLabels[log.action ?? ""]?.color ?? "bg-gray-100"}
-                          >
-                            {actionLabels[log.action ?? ""]?.label ?? log.action}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {log.entityType ? (entityLabels[log.entityType] ?? log.entityType) : "-"}
-                          {log.entityId ? ` #${log.entityId}` : ""}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">
-                          {formatChanges(log.changes)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {data.logs.map(
+                      (log: {
+                        id: number;
+                        createdAt: string | Date | null;
+                        userName: string | null;
+                        userEmail: string | null;
+                        userId: number | null;
+                        action: string | null;
+                        entityType: string | null;
+                        entityId: number | null;
+                        changes: unknown;
+                      }) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-xs whitespace-nowrap">
+                            {log.createdAt
+                              ? format(
+                                  new Date(log.createdAt),
+                                  "dd/MM/yyyy HH:mm:ss",
+                                  { locale: ptBR }
+                                )
+                              : "-"}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {log.userName ??
+                              log.userEmail ??
+                              (log.userId ? `ID ${log.userId}` : "-")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={
+                                actionLabels[log.action ?? ""]?.color ??
+                                statusStyles.muted
+                              }
+                            >
+                              {actionLabels[log.action ?? ""]?.label ??
+                                log.action}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {log.entityType
+                              ? (entityLabels[log.entityType] ?? log.entityType)
+                              : "-"}
+                            {log.entityId ? ` #${log.entityId}` : ""}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">
+                            {formatChanges(log.changes)}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
                   </TableBody>
                 </Table>
 
@@ -300,35 +367,47 @@ export default function AuditLogs() {
                         <PaginationItem>
                           <PaginationPrevious
                             onClick={() => setPage(Math.max(0, page - 1))}
-                            className={page === 0 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            className={
+                              page === 0
+                                ? "pointer-events-none opacity-50"
+                                : "cursor-pointer"
+                            }
                           />
                         </PaginationItem>
-                        {Array.from({ length: Math.min(totalPages, 7) }).map((_, i) => {
-                          let pageNum: number;
-                          if (totalPages <= 7) {
-                            pageNum = i;
-                          } else if (page < 3) {
-                            pageNum = i;
-                          } else if (page > totalPages - 4) {
-                            pageNum = totalPages - 7 + i;
-                          } else {
-                            pageNum = page - 3 + i;
+                        {Array.from({ length: Math.min(totalPages, 7) }).map(
+                          (_, i) => {
+                            let pageNum: number;
+                            if (totalPages <= 7) {
+                              pageNum = i;
+                            } else if (page < 3) {
+                              pageNum = i;
+                            } else if (page > totalPages - 4) {
+                              pageNum = totalPages - 7 + i;
+                            } else {
+                              pageNum = page - 3 + i;
+                            }
+                            return (
+                              <PaginationItem key={pageNum}>
+                                <PaginationLink
+                                  onClick={() => setPage(pageNum)}
+                                  isActive={page === pageNum}
+                                >
+                                  {pageNum + 1}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
                           }
-                          return (
-                            <PaginationItem key={pageNum}>
-                              <PaginationLink
-                                onClick={() => setPage(pageNum)}
-                                isActive={page === pageNum}
-                              >
-                                {pageNum + 1}
-                              </PaginationLink>
-                            </PaginationItem>
-                          );
-                        })}
+                        )}
                         <PaginationItem>
                           <PaginationNext
-                            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                            className={page >= totalPages - 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            onClick={() =>
+                              setPage(Math.min(totalPages - 1, page + 1))
+                            }
+                            className={
+                              page >= totalPages - 1
+                                ? "pointer-events-none opacity-50"
+                                : "cursor-pointer"
+                            }
                           />
                         </PaginationItem>
                       </PaginationContent>

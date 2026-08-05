@@ -1,12 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +41,7 @@ import {
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { statusStyles } from "@/lib/status-colors";
 import {
   Select,
   SelectContent,
@@ -55,20 +51,118 @@ import {
 } from "@/components/ui/select";
 
 const EMOJIS = [
-  "😀","😃","😄","😁","😆","😅","😂","🤣",
-  "😊","😇","🙂","🙃","😉","😌","😍","🥰",
-  "😘","😗","😙","😋","😛","😜","🤪","😝",
-  "🤗","🤭","🤫","🤔","🤐","🤨","😐","😑",
-  "😶","😏","😒","😞","😔","😟","😕","🙁",
-  "☹️","😣","😖","😫","😩","🥺","😢","😭",
-  "😤","😠","😡","🤬","🤯","😳","🥵","🥶",
-  "😱","😨","😰","😥","😓","🤗","🤔","🤭",
-  "👍","👎","👌","✌️","🤞","🤟","🤘","🤙",
-  "👈","👉","👆","👇","☝️","✋","🤚","🖐️",
-  "👋","🤝","🙏","✍️","💅","🤳","💪","🦾",
-  "❤️","🧡","💛","💚","💙","💜","🤎","🖤",
-  "🤍","💔","❣️","💕","💞","💓","💗","💖",
-  "💘","💝","💟","☮️","✝️","☪️","🕉️","☸️",
+  "😀",
+  "😃",
+  "😄",
+  "😁",
+  "😆",
+  "😅",
+  "😂",
+  "🤣",
+  "😊",
+  "😇",
+  "🙂",
+  "🙃",
+  "😉",
+  "😌",
+  "😍",
+  "🥰",
+  "😘",
+  "😗",
+  "😙",
+  "😋",
+  "😛",
+  "😜",
+  "🤪",
+  "😝",
+  "🤗",
+  "🤭",
+  "🤫",
+  "🤔",
+  "🤐",
+  "🤨",
+  "😐",
+  "😑",
+  "😶",
+  "😏",
+  "😒",
+  "😞",
+  "😔",
+  "😟",
+  "😕",
+  "🙁",
+  "☹️",
+  "😣",
+  "😖",
+  "😫",
+  "😩",
+  "🥺",
+  "😢",
+  "😭",
+  "😤",
+  "😠",
+  "😡",
+  "🤬",
+  "🤯",
+  "😳",
+  "🥵",
+  "🥶",
+  "😱",
+  "😨",
+  "😰",
+  "😥",
+  "😓",
+  "🤗",
+  "🤔",
+  "🤭",
+  "👍",
+  "👎",
+  "👌",
+  "✌️",
+  "🤞",
+  "🤟",
+  "🤘",
+  "🤙",
+  "👈",
+  "👉",
+  "👆",
+  "👇",
+  "☝️",
+  "✋",
+  "🤚",
+  "🖐️",
+  "👋",
+  "🤝",
+  "🙏",
+  "✍️",
+  "💅",
+  "🤳",
+  "💪",
+  "🦾",
+  "❤️",
+  "🧡",
+  "💛",
+  "💚",
+  "💙",
+  "💜",
+  "🤎",
+  "🖤",
+  "🤍",
+  "💔",
+  "❣️",
+  "💕",
+  "💞",
+  "💓",
+  "💗",
+  "💖",
+  "💘",
+  "💝",
+  "💟",
+  "☮️",
+  "✝️",
+  "☪️",
+  "🕉️",
+  "☸️",
 ];
 
 interface Conversation {
@@ -123,18 +217,24 @@ export default function Conversations() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch conversations (all statuses)
-  const { data: conversations, isLoading: conversationsLoading, refetch: refetchConversations } =
-    trpc.conversations.list.useQuery<Conversation[]>({
-      tag: selectedTag || undefined,
-      limit: 50,
-    });
+  const {
+    data: conversations,
+    isLoading: conversationsLoading,
+    refetch: refetchConversations,
+  } = trpc.conversations.list.useQuery<Conversation[]>({
+    tag: selectedTag || undefined,
+    limit: 50,
+  });
 
   // Fetch selected conversation details with messages
-  const { data: selectedConversationData, isLoading: messagesLoading, refetch: refetchMessages } =
-    trpc.conversations.get.useQuery(
-      { id: selectedConversationId || 0 },
-      { enabled: !!selectedConversationId }
-    );
+  const {
+    data: selectedConversationData,
+    isLoading: messagesLoading,
+    refetch: refetchMessages,
+  } = trpc.conversations.get.useQuery(
+    { id: selectedConversationId || 0 },
+    { enabled: !!selectedConversationId }
+  );
 
   const selectedConversation = selectedConversationData as any;
 
@@ -161,26 +261,30 @@ export default function Conversations() {
   });
 
   // WebSocket for real-time updates
-  const { isConnected, lastMessage, joinConversation, sendTyping } = useWebSocket(
-    user?.id || null,
-    (message) => {
-      if (message.type === "new_message" && message.conversationId === selectedConversationId) {
+  const { isConnected, lastMessage, joinConversation, sendTyping } =
+    useWebSocket(user?.id || null, message => {
+      if (
+        message.type === "new_message" &&
+        message.conversationId === selectedConversationId
+      ) {
         refetchMessages();
         refetchConversations();
       } else if (message.type === "conversation_updated") {
         refetchConversations();
-      } else if (message.type === "typing" && message.conversationId === selectedConversationId) {
-        setTypingUsers((prev) => new Set(prev).add(message.userId));
+      } else if (
+        message.type === "typing" &&
+        message.conversationId === selectedConversationId
+      ) {
+        setTypingUsers(prev => new Set(prev).add(message.userId));
         setTimeout(() => {
-          setTypingUsers((prev) => {
+          setTypingUsers(prev => {
             const next = new Set(prev);
             next.delete(message.userId);
             return next;
           });
         }, 3000);
       }
-    }
-  );
+    });
 
   // Join conversation via WebSocket when selected
   useEffect(() => {
@@ -213,9 +317,9 @@ export default function Conversations() {
 
   const handleTyping = () => {
     if (!selectedConversationId) return;
-    
+
     sendTyping(selectedConversationId);
-    
+
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
@@ -226,7 +330,7 @@ export default function Conversations() {
 
   const filteredConversations =
     conversations?.filter(
-      (conv) =>
+      conv =>
         conv.id.toString().includes(searchTerm) ||
         conv.contactId.toString().includes(searchTerm) ||
         conv.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -238,13 +342,13 @@ export default function Conversations() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800";
+        return statusStyles.success;
       case "waiting_human":
-        return "bg-yellow-100 text-yellow-800";
+        return statusStyles.warning;
       case "closed":
-        return "bg-gray-100 text-gray-800";
+        return statusStyles.muted;
       default:
-        return "bg-gray-100 text-gray-800";
+        return statusStyles.muted;
     }
   };
 
@@ -263,7 +367,7 @@ export default function Conversations() {
 
   const renderMessageContent = (msg: Message) => {
     const isOwn = msg.senderId === user?.id;
-    
+
     switch (msg.type) {
       case "image":
         return (
@@ -305,9 +409,12 @@ export default function Conversations() {
           <div className="flex items-center gap-3 p-3 bg-muted rounded-lg max-w-md border">
             <FileText className="h-8 w-8 text-muted-foreground" />
             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{msg.content || "Documento"}</p>
+              <p className="font-medium truncate">
+                {msg.content || "Documento"}
+              </p>
               <p className="text-xs text-muted-foreground">
-                {((msg.metadata as Record<string, unknown>)?.fileName as string) || "Arquivo"}
+                {((msg.metadata as Record<string, unknown>)
+                  ?.fileName as string) || "Arquivo"}
               </p>
             </div>
             <Button
@@ -322,11 +429,12 @@ export default function Conversations() {
       case "location":
         return (
           <div className="flex items-center gap-3 p-3 bg-muted rounded-lg max-w-md border">
-            <MapPin className="h-8 w-8 text-red-500" />
+            <MapPin className="h-8 w-8 text-destructive" />
             <div className="flex-1">
               <p className="font-medium">Localização</p>
               <p className="text-xs text-muted-foreground">
-                {((msg.metadata as Record<string, unknown>)?.address as string) || "Ver localização"}
+                {((msg.metadata as Record<string, unknown>)
+                  ?.address as string) || "Ver localização"}
               </p>
             </div>
             <Button
@@ -348,12 +456,12 @@ export default function Conversations() {
 
     switch (msg.status) {
       case "read":
-        return <CheckCheck className="h-4 w-4 text-blue-500" />;
+        return <CheckCheck className="h-4 w-4 text-info" />;
       case "delivered":
-        return <CheckCheck className="h-4 w-4 text-gray-400" />;
+        return <CheckCheck className="h-4 w-4 text-muted-foreground" />;
       case "sent":
       default:
-        return <Check className="h-4 w-4 text-gray-400" />;
+        return <Check className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -366,15 +474,18 @@ export default function Conversations() {
           <div className="p-4 border-b space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Mensagens</h2>
-              <Badge variant={isConnected ? "default" : "secondary"} className="gap-1">
+              <Badge
+                variant={isConnected ? "default" : "secondary"}
+                className="gap-1"
+              >
                 {isConnected ? (
                   <>
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
+                    <span className="h-2 w-2 rounded-full bg-success" />
                     Online
                   </>
                 ) : (
                   <>
-                    <span className="h-2 w-2 rounded-full bg-gray-400" />
+                    <span className="h-2 w-2 rounded-full bg-muted-foreground" />
                     Offline
                   </>
                 )}
@@ -385,13 +496,16 @@ export default function Conversations() {
               <Input
                 placeholder="Buscar conversas..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedTag || ""} onValueChange={v => setSelectedTag(v || null)}>
+              <Select
+                value={selectedTag || ""}
+                onValueChange={v => setSelectedTag(v || null)}
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Tag" />
                 </SelectTrigger>
@@ -416,10 +530,12 @@ export default function Conversations() {
                 </div>
               ) : filteredConversations.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">
-                  {searchTerm ? "Nenhuma conversa encontrada" : "Nenhuma conversa ativa"}
+                  {searchTerm
+                    ? "Nenhuma conversa encontrada"
+                    : "Nenhuma conversa ativa"}
                 </div>
               ) : (
-                filteredConversations.map((conv) => (
+                filteredConversations.map(conv => (
                   <button
                     key={conv.id}
                     onClick={() => setSelectedConversationId(conv.id)}
@@ -430,7 +546,10 @@ export default function Conversations() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0 flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={conv.contact?.avatar} alt={conv.contact?.name || ""} />
+                          <AvatarImage
+                            src={conv.contact?.avatar}
+                            alt={conv.contact?.name || ""}
+                          />
                           <AvatarFallback className="text-xs font-medium">
                             {conv.contact?.name?.charAt(0).toUpperCase() || "?"}
                           </AvatarFallback>
@@ -438,7 +557,8 @@ export default function Conversations() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <p className="font-medium truncate">
-                              {conv.contact?.name || `Contato #${conv.contactId}`}
+                              {conv.contact?.name ||
+                                `Contato #${conv.contactId}`}
                             </p>
                             <span
                               className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(
@@ -452,10 +572,9 @@ export default function Conversations() {
                             {conv.contact?.whatsappNumber}
                           </p>
                           {conv.unreadCount && conv.unreadCount > 0 && (
-                            <span
-                              className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground rounded-full"
-                            >
-                              {conv.unreadCount} nova{conv.unreadCount > 1 ? "s" : ""}
+                            <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+                              {conv.unreadCount} nova
+                              {conv.unreadCount > 1 ? "s" : ""}
                             </span>
                           )}
                         </div>
@@ -483,14 +602,20 @@ export default function Conversations() {
             <div className="p-4 border-b flex items-center justify-between bg-muted/50">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={selectedConversation.contact?.avatar} alt="" />
+                  <AvatarImage
+                    src={selectedConversation.contact?.avatar}
+                    alt=""
+                  />
                   <AvatarFallback className="text-sm font-medium">
-                    {selectedConversation.contact?.name?.charAt(0).toUpperCase() || "?"}
+                    {selectedConversation.contact?.name
+                      ?.charAt(0)
+                      .toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-bold">
-                    {selectedConversation.contact?.name || `Contato #${selectedConversation.contactId}`}
+                    {selectedConversation.contact?.name ||
+                      `Contato #${selectedConversation.contactId}`}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {selectedConversation.contact?.whatsappNumber}
@@ -498,7 +623,13 @@ export default function Conversations() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={selectedConversation.status === "waiting_human" ? "destructive" : "secondary"}>
+                <Badge
+                  variant={
+                    selectedConversation.status === "waiting_human"
+                      ? "destructive"
+                      : "secondary"
+                  }
+                >
                   {getStatusLabel(selectedConversation.status)}
                 </Badge>
                 <DropdownMenu>
@@ -518,7 +649,7 @@ export default function Conversations() {
                     </DropdownMenuItem>
                     {selectedConversation.status !== "closed" && (
                       <DropdownMenuItem
-                        className="cursor-pointer text-orange-600"
+                        className="cursor-pointer text-warning"
                         onClick={() => {
                           if (selectedConversationId) {
                             updateStatusMutation.mutate({
@@ -533,7 +664,7 @@ export default function Conversations() {
                     )}
                     {selectedConversation.status === "waiting_human" && (
                       <DropdownMenuItem
-                        className="cursor-pointer text-green-600"
+                        className="cursor-pointer text-success"
                         onClick={() => {
                           if (selectedConversationId) {
                             updateStatusMutation.mutate({
@@ -547,9 +678,12 @@ export default function Conversations() {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
-                      className="cursor-pointer text-red-600"
+                      className="cursor-pointer text-destructive"
                       onClick={() => {
-                        if (selectedConversationId && confirm("Encerrar esta conversa?")) {
+                        if (
+                          selectedConversationId &&
+                          confirm("Encerrar esta conversa?")
+                        ) {
                           updateStatusMutation.mutate({
                             conversationId: selectedConversationId,
                             status: "closed",
@@ -573,66 +707,69 @@ export default function Conversations() {
               </div>
             )}
 
-{/* Messages */}
+            {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
-                {(
-                  messagesLoading && selectedConversation?.messages?.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                      Carregando mensagens...
-                    </div>
-                  ) : selectedConversation?.messages?.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="mb-2">Nenhuma mensagem nesta conversa</p>
-                      <p className="text-sm">Seja o primeiro a enviar uma mensagem</p>
-                    </div>
-                  ) : (
-                    selectedConversation?.messages
-                      ?.slice()
-                      .reverse()
-                      .map((msg: Message, idx: number, arr: Message[]) => {
-                        const isOwn = msg.senderId === user?.id;
-                        const prevMsg = arr[idx - 1];
-                        const showTime =
-                          !prevMsg ||
-                          (msg.createdAt &&
-                            prevMsg.createdAt &&
-                            new Date(msg.createdAt).getTime() -
-                              new Date(prevMsg.createdAt).getTime() >
-                              5 * 60 * 1000);
+                {messagesLoading &&
+                selectedConversation?.messages?.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                    Carregando mensagens...
+                  </div>
+                ) : selectedConversation?.messages?.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="mb-2">Nenhuma mensagem nesta conversa</p>
+                    <p className="text-sm">
+                      Seja o primeiro a enviar uma mensagem
+                    </p>
+                  </div>
+                ) : (
+                  selectedConversation?.messages
+                    ?.slice()
+                    .reverse()
+                    .map((msg: Message, idx: number, arr: Message[]) => {
+                      const isOwn = msg.senderId === user?.id;
+                      const prevMsg = arr[idx - 1];
+                      const showTime =
+                        !prevMsg ||
+                        (msg.createdAt &&
+                          prevMsg.createdAt &&
+                          new Date(msg.createdAt).getTime() -
+                            new Date(prevMsg.createdAt).getTime() >
+                            5 * 60 * 1000);
 
-                        return (
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                        >
                           <div
-                            key={msg.id}
-                            className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                            className={`max-w-[70%] ${
+                              isOwn
+                                ? "rounded-2xl rounded-tr-none bg-primary text-primary-foreground"
+                                : "rounded-2xl rounded-tl-none bg-muted"
+                            }`}
                           >
+                            <div className="p-3">
+                              {renderMessageContent(msg)}
+                            </div>
                             <div
-                              className={`max-w-[70%] ${
-                                isOwn
-                                  ? "rounded-2xl rounded-tr-none bg-primary text-primary-foreground"
-                                  : "rounded-2xl rounded-tl-none bg-muted"
+                              className={`flex items-end gap-1 px-3 pb-2 ${
+                                isOwn ? "justify-end" : "justify-start"
                               }`}
                             >
-                              <div className="p-3">{renderMessageContent(msg)}</div>
-                              <div
-                                className={`flex items-end gap-1 px-3 pb-2 ${
-                                  isOwn ? "justify-end" : "justify-start"
-                                }`}
-                              >
-                                <span className="text-xs opacity-60">
-                                  {formatDistanceToNow(new Date(msg.createdAt), {
-                                    addSuffix: false,
-                                    locale: ptBR,
-                                  })}
-                                </span>
-                                {renderMessageStatus(msg)}
-                              </div>
+                              <span className="text-xs opacity-60">
+                                {formatDistanceToNow(new Date(msg.createdAt), {
+                                  addSuffix: false,
+                                  locale: ptBR,
+                                })}
+                              </span>
+                              {renderMessageStatus(msg)}
                             </div>
                           </div>
-                        );
-                      })
-                  )
+                        </div>
+                      );
+                    })
                 )}
               </div>
             </ScrollArea>
@@ -652,7 +789,7 @@ export default function Conversations() {
                   <Input
                     placeholder="Digite uma mensagem..."
                     value={messageText}
-                    onChange={(e) => {
+                    onChange={e => {
                       setMessageText(e.target.value);
                       handleTyping();
                     }}
@@ -671,16 +808,16 @@ export default function Conversations() {
                     <Send className="h-5 w-5" />
                   </Button>
                 </div>
-                
+
                 {/* Emoji Picker */}
                 {showEmojiPicker && (
                   <div className="absolute bottom-full left-12 right-12 mb-2 bg-popover border rounded-lg shadow-lg p-2 z-10">
                     <div className="grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
-                      {EMOJIS.map((emoji) => (
+                      {EMOJIS.map(emoji => (
                         <button
                           key={emoji}
                           onClick={() => {
-                            setMessageText((prev) => prev + emoji);
+                            setMessageText(prev => prev + emoji);
                             setShowEmojiPicker(false);
                           }}
                           className="text-2xl hover:bg-muted rounded p-1 transition-colors"
@@ -692,15 +829,15 @@ export default function Conversations() {
                   </div>
                 )}
               </div>
-              
+
               {selectedConversation?.status === "waiting_human" && (
-                <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+                <div className="text-sm text-warning bg-warning/10 p-2 rounded">
                   ⚠️ Esta conversa está aguardando um atendente humano
                 </div>
               )}
-              
+
               {selectedConversation?.status === "closed" && (
-                <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
                   🔒 Conversa encerrada
                 </div>
               )}

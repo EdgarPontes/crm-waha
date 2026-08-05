@@ -15,7 +15,16 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { trpc } from "@/lib/trpc";
-import { Plus, Search, Edit2, Trash2, Mail, Phone, User, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Mail,
+  Phone,
+  User,
+  Loader2,
+} from "lucide-react";
 
 interface Contact {
   id: number;
@@ -142,7 +151,7 @@ export default function Contacts() {
 
         {/* Form */}
         {showForm && (
-          <Card className="border-blue-200 bg-blue-50">
+          <Card>
             <CardHeader>
               <CardTitle>
                 {editingId ? "Editar Contato" : "Criar Novo Contato"}
@@ -155,7 +164,7 @@ export default function Contacts() {
                   <Input
                     placeholder="Nome do contato"
                     value={formData.name}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                   />
@@ -165,8 +174,11 @@ export default function Contacts() {
                   <Input
                     placeholder="+55 11 99999-9999"
                     value={formData.whatsappNumber}
-                    onChange={(e) =>
-                      setFormData({ ...formData, whatsappNumber: e.target.value })
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        whatsappNumber: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -178,7 +190,7 @@ export default function Contacts() {
                     type="email"
                     placeholder="email@exemplo.com"
                     value={formData.email}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, email: e.target.value })
                     }
                   />
@@ -188,7 +200,7 @@ export default function Contacts() {
                   <Input
                     placeholder="+55 11 99999-9999"
                     value={formData.phone}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
                   />
@@ -197,17 +209,19 @@ export default function Contacts() {
               <div className="flex gap-2">
                 <Button
                   onClick={handleSave}
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                 >
                   {createMutation.isPending || updateMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Salvando...
                     </>
+                  ) : editingId ? (
+                    "Atualizar"
                   ) : (
-                    editingId
-                      ? "Atualizar"
-                      : "Criar Contato"
+                    "Criar Contato"
                   )}
                 </Button>
                 <Button variant="outline" onClick={resetForm}>
@@ -224,7 +238,7 @@ export default function Contacts() {
           <Input
             placeholder="Buscar contatos..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="max-w-sm"
           />
         </div>
@@ -241,7 +255,7 @@ export default function Contacts() {
               <div className="text-center py-8 text-muted-foreground">
                 {searchTerm
                   ? "Nenhum contato encontrado"
-                  : "Nenhum contato cadastrado. Clique em \"Novo Contato\" para começar."}
+                  : 'Nenhum contato cadastrado. Clique em "Novo Contato" para começar.'}
               </div>
             ) : (
               <ScrollArea className="max-h-[600px]">
@@ -265,7 +279,9 @@ export default function Contacts() {
                               <User className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <p className="font-medium">{contact.name || "Sem nome"}</p>
+                              <p className="font-medium">
+                                {contact.name || "Sem nome"}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 ID: {contact.id}
                               </p>
@@ -275,7 +291,9 @@ export default function Contacts() {
                         <td className="py-4">
                           <div className="flex items-center gap-2">
                             <Phone className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-mono text-sm">{contact.whatsappNumber}</span>
+                            <span className="font-mono text-sm">
+                              {contact.whatsappNumber}
+                            </span>
                           </div>
                         </td>
                         <td className="py-4">
@@ -299,7 +317,9 @@ export default function Contacts() {
                           )}
                         </td>
                         <td className="py-4 text-sm text-muted-foreground">
-                          {new Date(contact.lastInteractionAt).toLocaleDateString("pt-BR", {
+                          {new Date(
+                            contact.lastInteractionAt
+                          ).toLocaleDateString("pt-BR", {
                             day: "2-digit",
                             month: "2-digit",
                             year: "numeric",
@@ -337,31 +357,37 @@ export default function Contacts() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">{contacts?.length || 0}</p>
-                <p className="text-sm text-muted-foreground">Total de Contatos</p>
+                <p className="text-3xl font-bold text-sidebar-foreground">
+                  {contacts?.length || 0}
+                </p>
+                <p className="text-sm text-sidebar-foreground/70">
+                  Total de Contatos
+                </p>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-sidebar-foreground">
                   {contacts?.filter((c: Contact) => c.email).length || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Com Email</p>
+                <p className="text-sm text-sidebar-foreground/70">Com Email</p>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-sidebar-foreground">
                   {contacts?.filter((c: Contact) => c.phone).length || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Com Telefone</p>
+                <p className="text-sm text-sidebar-foreground/70">
+                  Com Telefone
+                </p>
               </div>
             </CardContent>
           </Card>

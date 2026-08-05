@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Edit2, Mail } from "lucide-react";
+import { statusStyles } from "@/lib/status-colors";
 
 interface TeamMember {
   id: number;
@@ -125,14 +126,14 @@ export default function TeamManagement() {
   };
 
   const roleColors = {
-    Administrador: "bg-purple-100 text-purple-800",
-    Supervisor: "bg-blue-100 text-blue-800",
-    Atendente: "bg-green-100 text-green-800",
+    Administrador: statusStyles.violet,
+    Supervisor: statusStyles.blue,
+    Atendente: statusStyles.emerald,
   };
 
   const statusColors = {
-    ativo: "bg-green-100 text-green-800",
-    inativo: "bg-gray-100 text-gray-800",
+    ativo: statusStyles.success,
+    inativo: statusStyles.muted,
   };
 
   const atendentes = members.filter(m => m.role === "Atendente");
@@ -160,7 +161,7 @@ export default function TeamManagement() {
 
         {/* Form */}
         {showForm && (
-          <Card className="border-blue-200 bg-blue-50">
+          <Card>
             <CardHeader>
               <CardTitle>
                 {editingId ? "Editar Membro" : "Adicionar Novo Membro"}
@@ -231,31 +232,37 @@ export default function TeamManagement() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">{members.length}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-3xl font-bold text-sidebar-foreground">
+                  {members.length}
+                </p>
+                <p className="text-sm text-sidebar-foreground/70">
                   Total de Membros
                 </p>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">{atendentes.length}</p>
-                <p className="text-sm text-muted-foreground">Atendentes</p>
+                <p className="text-3xl font-bold text-sidebar-foreground">
+                  {atendentes.length}
+                </p>
+                <p className="text-sm text-sidebar-foreground/70">Atendentes</p>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">
+                <p className="text-3xl font-bold text-sidebar-foreground">
                   {members.filter(m => m.status === "ativo").length}
                 </p>
-                <p className="text-sm text-muted-foreground">Ativos Agora</p>
+                <p className="text-sm text-sidebar-foreground/70">
+                  Ativos Agora
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -426,27 +433,33 @@ export default function TeamManagement() {
         </Tabs>
 
         {/* Permissions Info */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Permissões por Perfil</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div>
-              <p className="font-semibold text-blue-900">👑 Administrador</p>
-              <p className="text-blue-800">
+              <p className="font-semibold text-sidebar-foreground">
+                👑 Administrador
+              </p>
+              <p className="text-sidebar-foreground/70">
                 Acesso total ao sistema, gerenciamento de equipes e
                 configurações
               </p>
             </div>
             <div>
-              <p className="font-semibold text-blue-900">📊 Supervisor</p>
-              <p className="text-blue-800">
+              <p className="font-semibold text-sidebar-foreground">
+                📊 Supervisor
+              </p>
+              <p className="text-sidebar-foreground/70">
                 Gerencia atendentes, visualiza relatórios e distribui conversas
               </p>
             </div>
             <div>
-              <p className="font-semibold text-blue-900">💬 Atendente</p>
-              <p className="text-blue-800">
+              <p className="font-semibold text-sidebar-foreground">
+                💬 Atendente
+              </p>
+              <p className="text-sidebar-foreground/70">
                 Acesso apenas a conversas atribuídas e base de conhecimento
               </p>
             </div>

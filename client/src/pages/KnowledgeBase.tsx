@@ -13,7 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Upload, Search, FileText, Trash2, Download, Plus, Loader2 } from "lucide-react";
+import {
+  Upload,
+  Search,
+  FileText,
+  Trash2,
+  Download,
+  Plus,
+  Loader2,
+} from "lucide-react";
+import { statusStyles } from "@/lib/status-colors";
 
 interface Document {
   id: number;
@@ -37,14 +46,16 @@ export default function KnowledgeBase() {
   const [searchQuery, setSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(
+    null
+  );
   const [isSearching, setIsSearching] = useState(false);
 
   // Fetch documents
-  const { data: fetchedDocuments, refetch: refetchDocuments } = trpc.ai.knowledgeBase.list.useQuery(
-    undefined,
-    { refetchOnWindowFocus: false }
-  );
+  const { data: fetchedDocuments, refetch: refetchDocuments } =
+    trpc.ai.knowledgeBase.list.useQuery(undefined, {
+      refetchOnWindowFocus: false,
+    });
 
   useEffect(() => {
     if (fetchedDocuments) {
@@ -60,7 +71,7 @@ export default function KnowledgeBase() {
   });
 
   const searchMutation = trpc.ai.knowledgeBase.search.useMutation({
-    onSuccess: (data) => {
+    onSuccess: data => {
       setSearchResults(data.results as SearchResult[]);
       setIsSearching(false);
     },
@@ -111,10 +122,10 @@ export default function KnowledgeBase() {
   };
 
   const fileTypeColors: Record<string, string> = {
-    pdf: "bg-red-100 text-red-800",
-    docx: "bg-blue-100 text-blue-800",
-    txt: "bg-gray-100 text-gray-800",
-    csv: "bg-green-100 text-green-800",
+    pdf: statusStyles.danger,
+    docx: statusStyles.info,
+    txt: statusStyles.muted,
+    csv: statusStyles.success,
   };
 
   const formatFileSize = (bytes: number) => {
@@ -128,7 +139,9 @@ export default function KnowledgeBase() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Base de Conhecimento</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Base de Conhecimento
+          </h1>
           <p className="text-muted-foreground mt-2">
             Gerencie documentos para consulta automática pela IA
           </p>
@@ -166,7 +179,9 @@ export default function KnowledgeBase() {
                   />
                   <Button
                     variant="outline"
-                    onClick={() => document.getElementById("file-input")?.click()}
+                    onClick={() =>
+                      document.getElementById("file-input")?.click()
+                    }
                   >
                     Selecionar Arquivo
                   </Button>
@@ -181,8 +196,12 @@ export default function KnowledgeBase() {
                         disabled={uploadMutation.isPending}
                         className="mt-2"
                       >
-                        {uploadMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {uploadMutation.isPending ? "Processando..." : "Enviar e Indexar"}
+                        {uploadMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {uploadMutation.isPending
+                          ? "Processando..."
+                          : "Enviar e Indexar"}
                       </Button>
                     </div>
                   )}
@@ -195,7 +214,8 @@ export default function KnowledgeBase() {
               <CardHeader>
                 <CardTitle>Documentos Carregados</CardTitle>
                 <CardDescription>
-                  {documents.length} documento{documents.length !== 1 ? "s" : ""} na base de conhecimento
+                  {documents.length} documento
+                  {documents.length !== 1 ? "s" : ""} na base de conhecimento
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -213,16 +233,21 @@ export default function KnowledgeBase() {
                         <div className="flex items-center gap-3 flex-1">
                           <FileText className="h-5 w-5 text-muted-foreground" />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{doc.fileName}</p>
+                            <p className="font-medium truncate">
+                              {doc.fileName}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {doc.uploadedAt
-                                ? new Date(doc.uploadedAt).toLocaleDateString("pt-BR", {
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
+                                ? new Date(doc.uploadedAt).toLocaleDateString(
+                                    "pt-BR",
+                                    {
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    }
+                                  )
                                 : "Data desconhecida"}
                               {doc.size && ` • ${formatFileSize(doc.size)}`}
                             </p>
@@ -235,7 +260,11 @@ export default function KnowledgeBase() {
                           <Button variant="ghost" size="icon" disabled>
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -253,7 +282,8 @@ export default function KnowledgeBase() {
               <CardHeader>
                 <CardTitle>Busca Semântica (RAG)</CardTitle>
                 <CardDescription>
-                  Teste como a IA buscará informações nos documentos usando embeddings
+                  Teste como a IA buscará informações nos documentos usando
+                  embeddings
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -266,8 +296,13 @@ export default function KnowledgeBase() {
                       if (e.key === "Enter") handleSearch();
                     }}
                   />
-                  <Button onClick={handleSearch} disabled={!searchQuery.trim() || isSearching}>
-                    {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button
+                    onClick={handleSearch}
+                    disabled={!searchQuery.trim() || isSearching}
+                  >
+                    {isSearching && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     <Search className="h-4 w-4 mr-2" />
                     Buscar
                   </Button>
@@ -282,7 +317,9 @@ export default function KnowledgeBase() {
                 {searchResults && searchResults.length > 0 && (
                   <div className="space-y-3 mt-6">
                     <p className="text-sm font-medium">
-                      {searchResults.length} resultado{searchResults.length !== 1 ? "s" : ""} encontrado{searchResults.length !== 1 ? "s" : ""}
+                      {searchResults.length} resultado
+                      {searchResults.length !== 1 ? "s" : ""} encontrado
+                      {searchResults.length !== 1 ? "s" : ""}
                     </p>
                     {searchResults.map((result, idx) => (
                       <div
@@ -297,7 +334,9 @@ export default function KnowledgeBase() {
                             Doc #{result.id}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{result.content}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {result.content}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -310,11 +349,12 @@ export default function KnowledgeBase() {
                 )}
 
                 {/* Help text */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>Como funciona:</strong> A busca usa embeddings vetoriais para encontrar
-                    trechos semanticamente similares à sua pergunta, não apenas correspondência
-                    exata de palavras-chave.
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-primary">
+                    <strong>Como funciona:</strong> A busca usa embeddings
+                    vetoriais para encontrar trechos semanticamente similares à
+                    sua pergunta, não apenas correspondência exata de
+                    palavras-chave.
                   </p>
                 </div>
               </CardContent>
@@ -323,11 +363,12 @@ export default function KnowledgeBase() {
         </Tabs>
 
         {/* Info Card */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-blue-900">
-              <strong>💡 Dica:</strong> A IA consultará automaticamente estes documentos ao responder
-              mensagens de clientes. Mantenha a base de conhecimento atualizada para melhores respostas.
+            <p className="text-sm text-sidebar-foreground">
+              <strong>💡 Dica:</strong> A IA consultará automaticamente estes
+              documentos ao responder mensagens de clientes. Mantenha a base de
+              conhecimento atualizada para melhores respostas.
             </p>
           </CardContent>
         </Card>

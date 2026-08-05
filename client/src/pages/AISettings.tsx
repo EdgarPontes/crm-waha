@@ -88,13 +88,15 @@ export default function AISettings() {
 
         {/* Active Config Status */}
         {activeConfig && (
-          <Card className="border-green-200 bg-green-50">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-medium text-green-900">IA Ativa</p>
-                  <p className="text-sm text-green-700">
+                  <p className="font-medium text-sidebar-foreground">
+                    IA Ativa
+                  </p>
+                  <p className="text-sm text-sidebar-foreground/70">
                     Provedor: {activeConfig.provider} | Modelo:{" "}
                     {activeConfig.model}
                   </p>
@@ -188,9 +190,7 @@ export default function AISettings() {
                     Testar Conexão
                   </Button>
                   {testConnectionMutation.data?.success && (
-                    <Badge variant="default" className="bg-green-600">
-                      ✓ Conexão OK
-                    </Badge>
+                    <Badge variant="success">✓ Conexão OK</Badge>
                   )}
                 </div>
               </CardContent>
@@ -292,9 +292,7 @@ export default function AISettings() {
             Salvar Configurações
           </Button>
           {updateConfigMutation.data && (
-            <Badge variant="default" className="bg-green-600">
-              ✓ Salvo com sucesso
-            </Badge>
+            <Badge variant="success">✓ Salvo com sucesso</Badge>
           )}
         </div>
       </div>

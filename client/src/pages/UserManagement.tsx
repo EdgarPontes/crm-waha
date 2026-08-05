@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
+import { statusStyles } from "@/lib/status-colors";
 import {
   Plus,
   Search,
@@ -60,9 +61,9 @@ interface ManagedUser {
 }
 
 const roleColors: Record<UserRole, string> = {
-  Administrador: "bg-purple-100 text-purple-800 border-purple-200",
-  Supervisor: "bg-blue-100 text-blue-800 border-blue-200",
-  Atendente: "bg-green-100 text-green-800 border-green-200",
+  Administrador: statusStyles.violet,
+  Supervisor: statusStyles.blue,
+  Atendente: statusStyles.emerald,
 };
 
 const roleIcons: Record<UserRole, React.ReactNode> = {
@@ -102,9 +103,8 @@ export default function UserManagement() {
   });
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [passwordResetUser, setPasswordResetUser] = useState<ManagedUser | null>(
-    null
-  );
+  const [passwordResetUser, setPasswordResetUser] =
+    useState<ManagedUser | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
 
@@ -232,7 +232,10 @@ export default function UserManagement() {
   const supervisors = filteredUsers.filter(u => u.role === "Supervisor");
   const atendentes = filteredUsers.filter(u => u.role === "Atendente");
 
-  function renderUserCard(target: ManagedUser, options?: { compact?: boolean }) {
+  function renderUserCard(
+    target: ManagedUser,
+    options?: { compact?: boolean }
+  ) {
     const isSelf = target.id === currentUser?.id;
     return (
       <Card key={target.id}>
@@ -253,16 +256,13 @@ export default function UserManagement() {
                 {target.emailVerified ? (
                   <Badge
                     variant="outline"
-                    className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1"
+                    className={`${statusStyles.emerald} gap-1`}
                   >
                     <ShieldCheck className="h-3 w-3" />
                     Verificado
                   </Badge>
                 ) : (
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-50 text-amber-700 border-amber-200"
-                  >
+                  <Badge variant="outline" className={statusStyles.amber}>
                     Não verificado
                   </Badge>
                 )}
@@ -279,9 +279,7 @@ export default function UserManagement() {
                 </span>
                 <span>Criado: {formatDate(target.createdAt)}</span>
                 {!options?.compact && (
-                  <span>
-                    Último acesso: {formatDate(target.lastSignedIn)}
-                  </span>
+                  <span>Último acesso: {formatDate(target.lastSignedIn)}</span>
                 )}
               </div>
             </div>
@@ -326,9 +324,7 @@ export default function UserManagement() {
               <Label className="text-xs text-muted-foreground">Perfil:</Label>
               <Select
                 value={target.role}
-                onValueChange={(v: UserRole) =>
-                  handleRoleChange(target.id, v)
-                }
+                onValueChange={(v: UserRole) => handleRoleChange(target.id, v)}
                 disabled={updateRoleMutation.isPending}
               >
                 <SelectTrigger className="h-8 w-[180px]">
@@ -371,10 +367,10 @@ export default function UserManagement() {
         </div>
 
         {!isAdmin && (
-          <Card className="bg-amber-50 border-amber-200">
+          <Card>
             <CardContent className="pt-6 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-              <p className="text-sm text-amber-800">
+              <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
+              <p className="text-sm text-sidebar-foreground/80">
                 Apenas administradores podem criar, editar, alterar perfil ou
                 excluir usuários.
               </p>
@@ -383,7 +379,7 @@ export default function UserManagement() {
         )}
 
         {showForm && isAdmin && (
-          <Card className="border-blue-200 bg-blue-50">
+          <Card>
             <CardHeader>
               <CardTitle>
                 {editingUser ? "Editar Usuário" : "Adicionar Novo Usuário"}
@@ -461,7 +457,7 @@ export default function UserManagement() {
               </div>
 
               {formError && (
-                <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <div className="flex items-start gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertCircle className="h-4 w-4 mt-0.5" />
                   <span>{formError}</span>
                 </div>
@@ -488,41 +484,47 @@ export default function UserManagement() {
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold">{stats?.total ?? "—"}</p>
-                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-3xl font-bold text-sidebar-foreground">
+                  {stats?.total ?? "—"}
+                </p>
+                <p className="text-sm text-sidebar-foreground/70">Total</p>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold text-purple-600">
+                <p className="text-3xl font-bold text-sidebar-foreground">
                   {stats?.administrators ?? 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Administradores</p>
+                <p className="text-sm text-sidebar-foreground/70">
+                  Administradores
+                </p>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold text-blue-600">
+                <p className="text-3xl font-bold text-sidebar-foreground">
                   {stats?.supervisors ?? 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Supervisores</p>
+                <p className="text-sm text-sidebar-foreground/70">
+                  Supervisores
+                </p>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-sidebar border-sidebar-border">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold text-green-600">
+                <p className="text-3xl font-bold text-sidebar-foreground">
                   {stats?.atendentes ?? 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Atendentes</p>
+                <p className="text-sm text-sidebar-foreground/70">Atendentes</p>
               </div>
             </CardContent>
           </Card>
@@ -590,34 +592,34 @@ export default function UserManagement() {
           </Tabs>
         )}
 
-        <Card className="bg-blue-50 border-blue-200">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Permissões por Perfil</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div>
-              <p className="font-semibold text-blue-900 flex items-center gap-2">
-                <Crown className="h-4 w-4" /> Administrador
+              <p className="font-semibold text-sidebar-foreground flex items-center gap-2">
+                <Crown className="h-4 w-4 text-primary" /> Administrador
               </p>
-              <p className="text-blue-800">
+              <p className="text-sidebar-foreground/70">
                 Acesso total ao sistema, gerenciamento de usuários,
                 configurações de IA, WAHA e todas as operações destrutivas.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-blue-900 flex items-center gap-2">
-                <Briefcase className="h-4 w-4" /> Supervisor
+              <p className="font-semibold text-sidebar-foreground flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-primary" /> Supervisor
               </p>
-              <p className="text-blue-800">
+              <p className="text-sidebar-foreground/70">
                 Gerencia atendentes, distribui conversas da fila, visualiza
                 relatórios e dashboards. Não pode editar/excluir usuários.
               </p>
             </div>
             <div>
-              <p className="font-semibold text-blue-900 flex items-center gap-2">
-                <Headphones className="h-4 w-4" /> Atendente
+              <p className="font-semibold text-sidebar-foreground flex items-center gap-2">
+                <Headphones className="h-4 w-4 text-primary" /> Atendente
               </p>
-              <p className="text-blue-800">
+              <p className="text-sidebar-foreground/70">
                 Atende apenas conversas atribuídas, consulta base de
                 conhecimento e visualiza leads do Kanban.
               </p>
@@ -639,7 +641,8 @@ export default function UserManagement() {
           <DialogHeader>
             <DialogTitle>Redefinir senha</DialogTitle>
             <DialogDescription>
-              Defina uma nova senha para {passwordResetUser?.name || passwordResetUser?.email}.
+              Defina uma nova senha para{" "}
+              {passwordResetUser?.name || passwordResetUser?.email}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">

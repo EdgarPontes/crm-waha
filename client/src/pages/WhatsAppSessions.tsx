@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { statusStyles } from "@/lib/status-colors";
 
 interface WhatsAppSession {
   id: number;
@@ -54,7 +55,11 @@ function SessionWebhookInfo({
   onRegister: (sessionName: string) => void;
   isRegistering: boolean;
 }) {
-  const { data: webhooks, isLoading, error } = trpc.waha.listWebhooks.useQuery(
+  const {
+    data: webhooks,
+    isLoading,
+    error,
+  } = trpc.waha.listWebhooks.useQuery(
     { sessionName },
     { enabled: !!sessionName }
   );
@@ -74,12 +79,12 @@ function SessionWebhookInfo({
         {isLoading ? (
           <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
         ) : hasWebhook ? (
-          <Badge className="bg-green-100 text-green-800 border-green-200">
+          <Badge variant="success">
             <CheckCircle2 className="mr-1 h-3 w-3" />
             Registrado
           </Badge>
         ) : (
-          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+          <Badge variant="warning">
             <AlertCircle className="mr-1 h-3 w-3" />
             Não registrado
           </Badge>
@@ -121,20 +126,20 @@ export default function WhatsAppSessions() {
   const utils = trpc.useUtils();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<WhatsAppSession | null>(
-    null
-  );
+  const [selectedSession, setSelectedSession] =
+    useState<WhatsAppSession | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
 
-  const { data: sessions, isLoading, refetch } = trpc.whatsapp.sessions.list.useQuery(
-    undefined,
-    {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    }
-  );
+  const {
+    data: sessions,
+    isLoading,
+    refetch,
+  } = trpc.whatsapp.sessions.list.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
 
   // Garante que sessions seja sempre um array
   const sessionsData = sessions || [];
@@ -146,7 +151,7 @@ export default function WhatsAppSessions() {
       utils.whatsapp.sessions.invalidate();
       toast.success("Sessão criada com sucesso!");
     },
-    onError: (error) => {
+    onError: error => {
       setIsCreating(false);
       toast.error(`Erro ao criar sessão: ${error.message}`);
     },
@@ -157,7 +162,7 @@ export default function WhatsAppSessions() {
       utils.whatsapp.sessions.invalidate();
       toast.success("Sessão desconectada!");
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Erro ao desconectar: ${error.message}`);
     },
   });
@@ -168,7 +173,7 @@ export default function WhatsAppSessions() {
       utils.waha.listSessions.invalidate();
       toast.success("Sessão deletada!");
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Erro ao deletar: ${error.message}`);
     },
   });
@@ -182,7 +187,7 @@ export default function WhatsAppSessions() {
       utils.waha.listWebhooks.invalidate();
       toast.success("Webhook registrado com sucesso!");
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(`Erro ao registrar webhook: ${error.message}`);
     },
   });
@@ -240,7 +245,7 @@ export default function WhatsAppSessions() {
           sessionName: session.sessionName,
         });
         if (data?.qrCode) {
-          setSelectedSession((prev) =>
+          setSelectedSession(prev =>
             prev ? { ...prev, qrCode: data.qrCode } : null
           );
           setQrLoading(false);
@@ -248,13 +253,14 @@ export default function WhatsAppSessions() {
         }
       } catch (error: unknown) {
         if (attempts >= maxAttempts) {
-          const message = error instanceof Error ? error.message : "Erro desconhecido";
+          const message =
+            error instanceof Error ? error.message : "Erro desconhecido";
           console.error("Erro ao buscar QR Code:", error);
           toast.error(`Aguardando geração do QR Code: ${message}`);
         }
       }
       if (attempts < maxAttempts) {
-        await new Promise((r) => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 2000));
       }
     }
     setQrLoading(false);
@@ -263,10 +269,10 @@ export default function WhatsAppSessions() {
   type SessionStatus = "connected" | "disconnected" | "connecting" | "error";
 
   const statusColors: Record<SessionStatus, string> = {
-    connected: "bg-green-100 text-green-800 border-green-200",
-    disconnected: "bg-red-100 text-red-800 border-red-200",
-    connecting: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    error: "bg-red-100 text-red-800 border-red-200",
+    connected: statusStyles.success,
+    disconnected: statusStyles.danger,
+    connecting: statusStyles.warning,
+    error: statusStyles.danger,
   };
 
   const statusIcons: Record<SessionStatus, React.ReactNode> = {
@@ -326,10 +332,7 @@ export default function WhatsAppSessions() {
         ) : (
           <div className="grid gap-4">
             {sessionsData.map((session: WhatsAppSession) => (
-              <Card
-                key={session.id}
-                className="transition-all hover:shadow-md"
-              >
+              <Card key={session.id} className="transition-all hover:shadow-md">
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -357,7 +360,9 @@ export default function WhatsAppSessions() {
                         <div>
                           <p className="font-medium">Criada em</p>
                           <p>
-                            {new Date(session.createdAt).toLocaleString("pt-BR")}
+                            {new Date(session.createdAt).toLocaleString(
+                              "pt-BR"
+                            )}
                           </p>
                         </div>
                       </div>
@@ -411,33 +416,51 @@ export default function WhatsAppSessions() {
         {/* Statistics */}
         {sessionsData.length > 0 && (
           <div className="grid grid-cols-3 gap-4">
-            <Card>
+            <Card className="bg-sidebar border-sidebar-border">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-green-600">
-                    {sessionsData.filter((s: WhatsAppSession) => s.status === "connected").length}
+                  <p className="text-3xl font-bold text-sidebar-foreground">
+                    {
+                      sessionsData.filter(
+                        (s: WhatsAppSession) => s.status === "connected"
+                      ).length
+                    }
                   </p>
-                  <p className="text-sm text-muted-foreground">Conectadas</p>
+                  <p className="text-sm text-sidebar-foreground/70">
+                    Conectadas
+                  </p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-sidebar border-sidebar-border">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-yellow-600">
-                    {sessionsData.filter((s: WhatsAppSession) => s.status === "connecting").length}
+                  <p className="text-3xl font-bold text-sidebar-foreground">
+                    {
+                      sessionsData.filter(
+                        (s: WhatsAppSession) => s.status === "connecting"
+                      ).length
+                    }
                   </p>
-                  <p className="text-sm text-muted-foreground">Conectando</p>
+                  <p className="text-sm text-sidebar-foreground/70">
+                    Conectando
+                  </p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-sidebar border-sidebar-border">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-red-600">
-                    {sessionsData.filter((s: WhatsAppSession) => s.status === "disconnected").length}
+                  <p className="text-3xl font-bold text-sidebar-foreground">
+                    {
+                      sessionsData.filter(
+                        (s: WhatsAppSession) => s.status === "disconnected"
+                      ).length
+                    }
                   </p>
-                  <p className="text-sm text-muted-foreground">Desconectadas</p>
+                  <p className="text-sm text-sidebar-foreground/70">
+                    Desconectadas
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -454,7 +477,7 @@ export default function WhatsAppSessions() {
               </DialogDescription>
             </DialogHeader>
             <form
-              onSubmit={(e) => {
+              onSubmit={e => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
                 const sessionName = formData.get("sessionName") as string;
@@ -503,7 +526,7 @@ export default function WhatsAppSessions() {
         {/* QR Code Dialog */}
         <Dialog
           open={isQRDialogOpen}
-          onOpenChange={(open) => {
+          onOpenChange={open => {
             if (!open) {
               setIsQRDialogOpen(false);
               setSelectedSession(null);
@@ -512,9 +535,7 @@ export default function WhatsAppSessions() {
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                Conectar {selectedSession?.sessionName}
-              </DialogTitle>
+              <DialogTitle>Conectar {selectedSession?.sessionName}</DialogTitle>
               <DialogDescription>
                 Escaneie o QR Code abaixo com seu WhatsApp
               </DialogDescription>
@@ -549,7 +570,9 @@ export default function WhatsAppSessions() {
               <div className="flex flex-col items-center justify-center py-8 gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  {qrLoading ? "Carregando QR Code..." : "Aguardando QR Code..."}
+                  {qrLoading
+                    ? "Carregando QR Code..."
+                    : "Aguardando QR Code..."}
                 </p>
               </div>
             )}
